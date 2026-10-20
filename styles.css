@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VARIABLES Y CONFIGURACIÓN GLOBAL (MODO CLARO / OSCURO v1.8.0)
+   VARIABLES Y CONFIGURACIÓN GLOBAL (MODO CLARO / OSCURO v1.8.4)
    ========================================================================== */
 :root {
     --bg-color: #f3f4f6;
@@ -53,37 +53,40 @@ body {
     touch-action: manipulation;
 }
 
-/* OCULTAR FLECHAS NATIVAS EN INPUTS NUMÉRICOS */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
-
 input[type="number"] {
     -moz-appearance: textfield;
 }
 
-/* ENCABEZADO SUPERIOR */
+/* ==========================================================================
+   CABECERA SUPERIOR CONTEXTUAL (v1.8.4)
+   ========================================================================== */
 .topbar {
     background: var(--primary-color);
     color: var(--card-bg);
-    padding: 1rem 16px;
+    padding: 0.75rem 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 900;
 }
 
-.topbar h1 {
-    font-size: 1.35rem;
+.topbar-title {
+    font-size: 1.15rem;
+    font-weight: 700;
     color: var(--card-bg);
-    margin: 0;
 }
 
-.topbar p {
-    margin: 0.25rem 0 0;
-    color: var(--text-muted);
-    font-size: 0.9rem;
+.topbar-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 /* CONTENEDOR PRINCIPAL Y PESTAÑAS */
@@ -105,7 +108,7 @@ input[type="number"] {
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.8rem;
 }
 
 .header-actions-inline {
@@ -119,25 +122,36 @@ h2 {
     margin: 0;
 }
 
-/* CHIPS DE FILTRADO CROMÁTICO EN INVENTARIO */
-.filter-chips {
-    display: flex;
-    gap: 0.4rem;
+/* ==========================================================================
+   FILTROS DE INVENTARIO COMPACTOS Y SIMÉTRICOS
+   ========================================================================== */
+.filter-chips-scroll {
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
     margin-bottom: 1rem;
-    flex-wrap: wrap;
+    scrollbar-width: none;
+}
+.filter-chips-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-chips {
+    display: inline-flex;
+    gap: 0.4rem;
 }
 
 .chip {
     border: 1px solid var(--input-border);
     background: var(--card-bg);
     color: var(--text-color);
-    padding: 0.4rem 0.7rem;
+    padding: 0.35rem 0.65rem;
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-height: 40px;
+    min-height: 38px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -173,14 +187,43 @@ h2 {
     color: #166534 !important;
 }
 
-/* SEMÁFORO VISUAL DE STOCK */
 .stock-semaphore {
     font-size: 0.9rem;
     margin-right: 4px;
     vertical-align: middle;
 }
 
-/* BOTONERA DE ACCIONES MASIVAS EN CESTA */
+/* ==========================================================================
+   ESTÉTICA LIMPIA DE CANTIDADES (SIN CAJAS / BOXED)
+   ========================================================================== */
+.cart-qty-adjuster {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.cart-qty-input {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 2px solid var(--primary-color) !important;
+    border-radius: 0 !important;
+    color: var(--text-color) !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    width: 48px !important;
+    text-align: center;
+    padding: 2px 0 !important;
+    min-height: auto !important;
+    box-shadow: none !important;
+}
+
+.unit-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
 .bulk-actions-bar {
     display: flex;
     gap: 0.5rem;
@@ -191,7 +234,6 @@ h2 {
     margin-top: 1rem;
 }
 
-/* BOTÓN MODO COMPACTO */
 .btn-super-toggle {
     background: #0284c7;
     color: #ffffff;
@@ -202,9 +244,7 @@ h2 {
     min-height: 40px;
 }
 
-/* ==========================================================================
-   NUEVO MODO LISTA COMPACTA (PANTALLA COMPLETA CUADERNO v1.8.0)
-   ========================================================================== */
+/* MODO LISTA COMPACTA */
 .compact-overlay {
     position: fixed;
     inset: 0;
@@ -265,15 +305,10 @@ h2 {
     border-bottom: 1px solid var(--border-color);
     cursor: pointer;
     gap: 12px;
-    transition: background 0.1s;
 }
 
 .compact-table-row:last-child {
     border-bottom: none;
-}
-
-.compact-table-row:active {
-    background: var(--secondary-bg);
 }
 
 .compact-row-checked {
@@ -304,7 +339,7 @@ h2 {
     white-space: nowrap;
 }
 
-/* GESTIÓN DE PASILLOS EN AJUSTES */
+/* GESTIÓN DE PASILLOS */
 .setting-row {
     display: flex;
     justify-content: space-between;
@@ -348,38 +383,6 @@ h2 {
     font-weight: 600;
 }
 
-/* CONTROLES DE CANTIDAD AJUSTABLE EN CESTA */
-.cart-qty-adjuster {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-}
-
-.cart-qty-input {
-    width: 52px;
-    padding: 0.2rem;
-    text-align: center;
-    font-weight: 700;
-    margin-top: 0;
-    border-radius: 6px;
-    min-height: 44px;
-}
-
-.small-qty {
-    width: 36px;
-    height: 36px;
-    font-size: 0.9rem;
-}
-
-.unit-text {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    margin: 0 2px;
-}
-
-/* TARJETAS Y ESTADÍSTICAS EN AJUSTES */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -412,7 +415,6 @@ h2 {
     margin-top: 0.25rem;
 }
 
-/* TARJETAS Y FILAS GENERALES */
 .card {
     background: var(--card-bg);
     border-radius: 12px;
@@ -461,8 +463,8 @@ h2 {
 }
 
 .btn-qty {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
     background-color: var(--secondary-bg);
@@ -475,10 +477,6 @@ h2 {
     cursor: pointer;
     padding: 0;
     user-select: none;
-}
-
-.btn-qty:active {
-    background-color: var(--input-border);
 }
 
 .btn-qty:disabled {
@@ -498,7 +496,6 @@ h2 {
     min-width: 60px;
 }
 
-/* FORMULARIO E INPUTS */
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -523,14 +520,30 @@ input:focus, select:focus, textarea:focus {
 }
 
 .search-box {
+    position: relative;
     margin-bottom: 1rem;
 }
-
 .search-box input {
     margin-top: 0;
+    padding-right: 2.5rem;
 }
 
-/* BOTONES GENERALES */
+.clear-search-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+.clear-search-btn.hidden {
+    display: none;
+}
+
 button, .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-import-label {
     border: 0;
     border-radius: 9px;
@@ -544,7 +557,7 @@ button, .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-import-label {
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    min-height: 44px;
+    min-height: 40px;
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -581,9 +594,9 @@ button, .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-import-label {
 }
 
 .small {
-    padding: 0.5rem 0.65rem;
-    font-size: 0.9rem;
-    min-height: 40px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+    min-height: 36px;
 }
 
 .full {
@@ -626,7 +639,6 @@ button, .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-import-label {
     font-style: italic;
 }
 
-/* CATEGORÍAS */
 .category-group {
     padding: 0;
     overflow: hidden;
@@ -646,12 +658,10 @@ button, .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-import-label {
 .category-items .inner-row {
     border-bottom: 1px solid var(--border-color);
 }
-
 .category-items .inner-row:last-child {
     border-bottom: none;
 }
 
-/* BARRA DE NAVEGACIÓN INFERIOR */
 .bottom-nav {
     position: fixed;
     bottom: 0;
@@ -682,7 +692,6 @@ button, .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-import-label {
     align-items: center;
     justify-content: center;
     font-size: 0.75rem;
-    -webkit-tap-highlight-color: transparent;
 }
 
 .nav-btn .icon {
@@ -713,7 +722,6 @@ button, .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-import-label {
     display: none;
 }
 
-/* MODAL */
 .modal {
     position: fixed;
     inset: 0;
@@ -778,7 +786,6 @@ button, .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-import-label {
     min-width: 44px;
 }
 
-/* NOTIFICACIONES TOAST */
 #toast-container {
     position: fixed;
     bottom: calc(var(--nav-height) + 12px);
@@ -814,13 +821,8 @@ button, .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-import-label {
 .toast.info { background: var(--info-bg); }
 .toast.warning { background: var(--warning-bg); }
 
-/* MEDIA QUERIES */
 @media (max-width: 600px) {
     .form-row {
         grid-template-columns: 1fr;
-    }
-
-    .topbar h1 {
-        font-size: 1.15rem;
     }
 }

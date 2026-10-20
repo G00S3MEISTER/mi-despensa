@@ -4,14 +4,16 @@ Aplicación Web Progresiva (PWA) ligera, rápida y moderna construida en **Vanil
 
 ---
 
-## 🚀 Novedades de la Versión v1.8.0
+## 🚀 Novedades de la Versión v1.8.4
 
-* **Gestión Personalizable de Pasillos / Categorías:** Nueva sección en Ajustes para añadir y eliminar pasillos del supermercado de manera dinámica, actualizando automáticamente los selectores en formularios.
-* **Nuevo Modo Lista Compacta (Pantalla Completa):** Interfaz tipo cuaderno/cuadrícula con líneas divisorias inspirada en tablas de secciones. Oculta la barra superior y navegación inferior para aprovechar todo el espacio útil en pasillo de compra.
-* **Modo Oscuro / Claro Manual:** Interruptor dedicado en la pestaña de Ajustes con persistencia en `localStorage` y adaptación cromática integral.
-* **Copiar Lista al Portapapeles:** Botón rápido en la cesta para exportar la lista completa estructurada por pasillos como texto plano.
-* **Indicador de Versión:** Etiqueta limpia visible al final de la pestaña de Ajustes (*Versión de la app: v1.8.0*).
-* **Service Worker v1.8.0:** Caché renovada para asegurar funcionamiento offline óptimo.
+* **Eliminación Definitiva del Botón "Nuevo" en Inventario:** Se ha limpiado por completo la esquina superior de la pestaña de inventario, unificando la gestión de creación de productos en la barra superior contextual y conservando únicamente el selector de vista.
+* **Lógica de Filtros por Umbral Acumulativo:** Actualización del comportamiento de los chips de stock en inventario para funcionar como umbrales acumulativos hacia abajo:
+  * **`🔴 0%`**: Muestra exclusivamente los productos agotados.
+  * **`🟠 <25%`**: Muestra productos críticos e incluye los agotados.
+  * **`🟡 <50%`**: Muestra productos en reserva, críticos y agotados.
+  * **`🟢 >50%`**: Muestra productos en estado saludable.
+  * **`⚪ Todos`**: Restablece y muestra todo el inventario.
+* **Service Worker v1.8.4:** Caché actualizada para garantizar la sincronización inmediata de la interfaz y las nuevas funciones de filtrado.
 
 ---
 
@@ -30,9 +32,9 @@ Aplicación Web Progresiva (PWA) ligera, rápida y moderna construida en **Vanil
 
 | Versión | Descripción y Cambios Principales |
 | :--- | :--- |
-| **v1.0 - v1.6.0** | Inventario base, cálculos automáticos, PWA nativa offline y optimización táctil. |
-| **v1.7.0 - v1.7.2** | Semáforo visual de stock, persistencia en cesta, feedback háptico y filtros cromáticos. |
-| **v1.8.0** | **Gestión de Pasillos, Modo Compacto, Tema Oscuro/Claro y Copia Rápida:** Incorporación de pasillos personalizables, vista tabular a pantalla completa, selector de tema, exportación de texto y etiqueta de versión. |
+| **v1.0 - v1.7.2** | Inventario base, semáforo visual de stock, persistencia en cesta, PWA offline y feedback háptico. |
+| **v1.8.0 - v1.8.3** | Pasillos personalizables, Modo Lista Compacta, Modo Oscuro/Claro manual, orden alfabético en pasillos y limpieza rápida en buscadores. |
+| **v1.8.4** | **Optimización UI/UX y Filtros Acumulativos:** Eliminación definitiva del botón "Nuevo" en inventario y nuevo filtrado por umbral acumulativo de stock. |
 
 ---
 
@@ -41,4 +43,3 @@ Aplicación Web Progresiva (PWA) ligera, rápida y moderna construida en **Vanil
 * **HTML5 & CSS3:** Estructura semántica, diseño responsive, Flexbox, CSS Grid y CSS Variables.
 * **Vanilla JavaScript (ES6+):** Sin frameworks ni dependencias externas.
 * **Service Workers & Web App Manifest:** Capacidades offline y nativas de PWA.
-* **Clipboard & Vibration API:** Interacción nativa para copias y respuesta háptica.

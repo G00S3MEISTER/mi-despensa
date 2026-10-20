@@ -1,4 +1,4 @@
-const CACHE_NAME = 'despensa-pwa-v1.8.0';
+const CACHE_NAME = 'despensa-pwa-v1.8.4';
 const ASSETS_TO_CACHE = [
   './index.html',
   './styles.css',
@@ -8,7 +8,6 @@ const ASSETS_TO_CACHE = [
   './assets/icon-512.png'
 ];
 
-// Instalación: Cachear recursos críticos
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -18,7 +17,6 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activación: Limpieza rigurosa de cachés antiguas (v1.8.0)
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -34,7 +32,6 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Estrategia Cache First, Network Fallback
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {

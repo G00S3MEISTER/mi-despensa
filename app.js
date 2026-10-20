@@ -1,10 +1,10 @@
 /* ==========================================================================
-   REGISTRO DEL SERVICE WORKER (v1.8.0)
+   REGISTRO DEL SERVICE WORKER (v1.8.4)
    ========================================================================== */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker registrado correctamente (v1.8.0):', reg.scope))
+      .then(reg => console.log('Service Worker registrado correctamente (v1.8.4):', reg.scope))
       .catch(err => console.error('Error al registrar Service Worker:', err));
   });
 }
@@ -17,11 +17,11 @@ let categories = JSON.parse(localStorage.getItem('inventory_categories')) || [
     'Lácteos', 'Frutería y Verdura', 'Carnicería', 'Pescadería', 'Despensa / Granel', 'Bebidas', 'Limpieza', 'Otros'
 ];
 let darkMode = JSON.parse(localStorage.getItem('inventory_darkmode')) || false;
+let inventoryViewMode = localStorage.getItem('inventory_view_mode') || 'categories'; 
 
-let activeFilter = 'all'; // 'all', 'red', 'orange', 'yellow', 'green'
+let activeFilter = localStorage.getItem('inventory_active_filter') || 'all'; 
 let cartAdjustments = {}; 
-let selectedCartIds = new Set(); // Persistencia de selecciones en Cesta
-let isCompactMode = false;
+let selectedCartIds = new Set(); 
 
 const normalizeText = (text) => 
     text ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim() : "";
@@ -34,7 +34,6 @@ const getStepForUnit = (unit) => {
     return 1;
 };
 
-// Semáforo de Inventario v1.8.0
 const getStockSemaphore = (current, target) => {
     if (current === 0) return { color: '🔴', label: 'Sin Stock' };
     const ratio = current / target;
@@ -47,12 +46,14 @@ function saveState() {
     localStorage.setItem('inventory_products', JSON.stringify(products));
     localStorage.setItem('inventory_categories', JSON.stringify(categories));
     localStorage.setItem('inventory_darkmode', JSON.stringify(darkMode));
+    localStorage.setItem('inventory_view_mode', inventoryViewMode);
+    localStorage.setItem('inventory_active_filter', activeFilter);
     updateStats();
     updateCartBadge();
 }
 
 /* ==========================================================================
-   INICIALIZACIÓN DE MODO OSCURO
+   MODO OSCURO Y TEMA
    ========================================================================== */
 function initTheme() {
     if (darkMode) {
@@ -94,9 +95,6 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
-/* ==========================================================================
-   BADGE INDICADOR EN CESTA
-   ========================================================================== */
 function updateCartBadge() {
     const badge = document.getElementById('badge-compra');
     if (!badge) return;
@@ -111,8 +109,63 @@ function updateCartBadge() {
 }
 
 /* ==========================================================================
-   CONTROL DE PESTAÑAS (NAVIGATION)
+   CONTROL DE PESTAÑAS Y TOPBAR CONTEXTUAL (v1.8.4)
    ========================================================================== */
+function updateTopbarContext(tabName) {
+    const titleEl = document.getElementById('topbar-title');
+    const actionsEl = document.getElementById('topbar-actions');
+    if (!titleEl || !actionsEl) return;
+
+    actionsEl.innerHTML = '';
+
+    if (tabName === 'inventario') {
+        titleEl.textContent = '📋 Inventario';
+        
+        // Botón Cambiar Vista y Botón + Nuevo integrados en la franja superior azul
+        const viewBtn = document.createElement('button');
+        viewBtn.className = 'btn btn-secondary small';
+        viewBtn.innerHTML = `🔀 <span id="view-mode-label">${inventoryViewMode === 'categories' ? 'Categorías' : 'Alfabética'}</span>`;
+        viewBtn.onclick = () => {
+            inventoryViewMode = inventoryViewMode === 'categories' ? 'alphabetical' : 'categories';
+            saveState();
+            renderInventario();
+            showToast(`Vista cambiada a ${inventoryViewMode === 'categories' ? 'Pasillos' : 'Alfabética A-Z'}`, 'info');
+        };
+        actionsEl.appendChild(viewBtn);
+
+        const newInvBtn = document.createElement('button');
+        newInvBtn.className = 'btn btn-secondary small'; 
+        newInvBtn.textContent = '+ Nuevo';
+        newInvBtn.onclick = () => openModal();
+        actionsEl.appendChild(newInvBtn);
+
+    } else if (tabName === 'compra') {
+        titleEl.textContent = '🛒 Lista de Compra';
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'btn btn-secondary small';
+        copyBtn.textContent = '📋 Copiar';
+        copyBtn.onclick = copyShoppingListToClipboard;
+        actionsEl.appendChild(copyBtn);
+
+        const compactBtn = document.createElement('button');
+        compactBtn.className = 'btn btn-super-toggle small';
+        compactBtn.textContent = '🖥️ Compacto';
+        compactBtn.onclick = openCompactMode;
+        actionsEl.appendChild(compactBtn);
+    } else if (tabName === 'productos') {
+        titleEl.textContent = '🏷️ Catálogo de Productos';
+        
+        const newProdBtn = document.createElement('button');
+        newProdBtn.className = 'btn btn-secondary small';
+        newProdBtn.textContent = '+ Nuevo';
+        newProdBtn.onclick = () => openModal();
+        actionsEl.appendChild(newProdBtn);
+
+    } else if (tabName === 'ajustes') {
+        titleEl.textContent = '⚙️ Ajustes';
+    }
+}
+
 function initNavigation() {
     const navButtons = document.querySelectorAll('.nav-btn');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -127,6 +180,8 @@ function initNavigation() {
             btn.classList.add('active');
             document.getElementById(`tab-${targetTab}`).classList.add('active');
 
+            updateTopbarContext(targetTab);
+
             if (targetTab === 'inventario') renderInventario();
             if (targetTab === 'productos') renderProductos();
             if (targetTab === 'compra') renderCompra();
@@ -136,10 +191,11 @@ function initNavigation() {
             }
         });
     });
+    updateTopbarContext('inventario');
 }
 
 /* ==========================================================================
-   GESTIÓN DE CATEGORÍAS / PASILLOS EN AJUSTES (v1.8.0)
+   REASIGNACIÓN Y ORDEN ALFABÉTICO EN SELECTORES DE PASILLOS
    ========================================================================== */
 function renderCategoriesManager() {
     const container = document.getElementById('categories-list-container');
@@ -164,12 +220,20 @@ function updateCategorySelects() {
     if (!select) return;
     const currentVal = select.value;
     select.innerHTML = '';
-    categories.forEach(cat => {
+
+    const sortedCategories = [...categories].sort((a, b) => {
+        if (a === 'Otros') return 1;
+        if (b === 'Otros') return -1;
+        return a.localeCompare(b);
+    });
+
+    sortedCategories.forEach(cat => {
         const opt = document.createElement('option');
         opt.value = cat;
         opt.textContent = cat;
         select.appendChild(opt);
     });
+
     if (categories.includes(currentVal)) {
         select.value = currentVal;
     }
@@ -199,48 +263,409 @@ function deleteCategory(catName) {
         alert('Debe existir al menos un pasillo.');
         return;
     }
-    if (confirm(`¿Eliminar pasillo "${catName}"? Los productos asociados pasarán a "Otros".`)) {
+    if (confirm(`¿Eliminar pasillo "${catName}"? Los productos asignados pasarán automáticamente a "Otros".`)) {
         categories = categories.filter(c => c !== catName);
         if (!categories.includes('Otros')) categories.push('Otros');
         
-        // Reasignar productos de esta categoría a "Otros"
         products.forEach(p => {
-            if (p.category === catName) p.category = 'Otros';
+            if (p.category === catName) {
+                p.category = 'Otros';
+            }
         });
 
         saveState();
         renderCategoriesManager();
-        showToast('Pasillo eliminado', 'warning');
+        renderInventario();
+        showToast('Pasillo eliminado y productos reasignados a Otros', 'warning');
     }
 }
 
 /* ==========================================================================
-   FILTROS CROMÁTICOS DE INVENTARIO
+   FILTROS CROMÁTICOS POR UMBRAL ACUMULATIVO (v1.8.4)
    ========================================================================== */
 function initFilters() {
     const chips = document.querySelectorAll('.filter-chips .chip');
+    
     chips.forEach(chip => {
+        const filterVal = chip.getAttribute('data-filter');
+        if (filterVal === activeFilter) {
+            chip.classList.add('active');
+        } else {
+            chip.classList.remove('active');
+        }
+
         chip.addEventListener('click', () => {
             chips.forEach(c => c.classList.remove('active'));
             chip.classList.add('active');
-            activeFilter = chip.getAttribute('data-filter');
+            activeFilter = filterVal;
+            saveState();
             renderInventario();
         });
     });
 }
 
-/* ==========================================================================
-   NUEVO MODO LISTA COMPACTA A PANTALLA COMPLETA (v1.8.0)
-   ========================================================================== */
-const toggleCompactBtn = document.getElementById('btn-toggle-compact');
-const exitCompactBtn = document.getElementById('btn-exit-compact');
-const compactOverlay = document.getElementById('compact-mode-overlay');
+function setupSearchWithClear(inputId, clearBtnId, renderCallback) {
+    const input = document.getElementById(inputId);
+    const clearBtn = document.getElementById(clearBtnId);
+    if (!input || !clearBtn) return;
 
-if (toggleCompactBtn) {
-    toggleCompactBtn.addEventListener('click', () => {
-        openCompactMode();
+    input.addEventListener('input', () => {
+        if (input.value.length > 0) {
+            clearBtn.classList.remove('hidden');
+        } else {
+            clearBtn.classList.add('hidden');
+        }
+        renderCallback();
+    });
+
+    clearBtn.addEventListener('click', () => {
+        input.value = '';
+        clearBtn.classList.add('hidden');
+        renderCallback();
+        input.focus();
     });
 }
+
+function renderInventario() {
+    const container = document.getElementById('lista-inventario-container');
+    const searchInput = document.getElementById('search-inventario');
+    const viewLabel = document.getElementById('view-mode-label');
+    if (!container) return;
+
+    if (viewLabel) {
+        viewLabel.textContent = inventoryViewMode === 'categories' ? 'Categorías' : 'Alfabética';
+    }
+
+    const query = normalizeText(searchInput ? searchInput.value : '');
+    container.innerHTML = '';
+
+    let filtered = products.filter(p => 
+        normalizeText(p.name).includes(query) || normalizeText(p.category).includes(query)
+    );
+
+    // Lógica de Filtros por Umbral Acumulativo (v1.8.4)
+    if (activeFilter === 'red') {
+        // 0%: Solo agotados
+        filtered = filtered.filter(p => p.currentStock === 0);
+    } else if (activeFilter === 'orange') {
+        // <25%: Agotados + crítico (ratio <= 0.25)
+        filtered = filtered.filter(p => {
+            if (p.currentStock === 0) return true;
+            return (p.currentStock / p.targetStock) <= 0.25;
+        });
+    } else if (activeFilter === 'yellow') {
+        // <50%: Agotados + crítico + reserva (ratio <= 0.50)
+        filtered = filtered.filter(p => {
+            if (p.currentStock === 0) return true;
+            return (p.currentStock / p.targetStock) <= 0.50;
+        });
+    } else if (activeFilter === 'green') {
+        // >50%: Saludable (ratio > 0.50)
+        filtered = filtered.filter(p => {
+            if (p.currentStock === 0) return false;
+            return (p.currentStock / p.targetStock) > 0.50;
+        });
+    }
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-msg card">No hay productos que coincidan con el filtro seleccionado.</div>';
+        return;
+    }
+
+    if (inventoryViewMode === 'alphabetical') {
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        const ul = document.createElement('ul');
+        ul.className = 'item-list';
+
+        filtered.forEach(p => {
+            ul.appendChild(createProductListItem(p));
+        });
+        container.appendChild(ul);
+    } else {
+        const grouped = filtered.reduce((acc, p) => {
+            acc[p.category] = acc[p.category] || [];
+            acc[p.category].push(p);
+            return acc;
+        }, {});
+
+        Object.keys(grouped).sort().forEach(cat => {
+            grouped[cat].sort((a, b) => a.name.localeCompare(b.name));
+
+            const groupEl = document.createElement('div');
+            groupEl.className = 'category-group card';
+
+            let itemsHtml = grouped[cat].map(p => {
+                const unit = p.unit || 'ud';
+                const step = getStepForUnit(unit);
+                const isMinDisabled = p.currentStock <= 0 ? 'disabled' : '';
+                const semaphore = getStockSemaphore(p.currentStock, p.targetStock);
+
+                return `
+                    <div class="item-row inner-row">
+                        <div class="item-info">
+                            <strong class="item-title"><span class="stock-semaphore" title="${semaphore.label}">${semaphore.color}</span> ${p.name}</strong>
+                            <div class="product-meta">Objetivo: ${p.targetStock} ${unit}</div>
+                        </div>
+                        <div class="stock-controls">
+                            <button class="btn-qty" onclick="changeStock('${p.id}', -${step})" ${isMinDisabled}>-</button>
+                            <span class="qty-badge">${p.currentStock} ${unit}</span>
+                            <button class="btn-qty" onclick="changeStock('${p.id}', ${step})">+</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            groupEl.innerHTML = `
+                <div class="category-title">${cat}</div>
+                <div class="category-items">${itemsHtml}</div>
+            `;
+            container.appendChild(groupEl);
+        });
+    }
+}
+
+function createProductListItem(p) {
+    const unit = p.unit || 'ud';
+    const step = getStepForUnit(unit);
+    const isMinDisabled = p.currentStock <= 0 ? 'disabled' : '';
+    const semaphore = getStockSemaphore(p.currentStock, p.targetStock);
+
+    const li = document.createElement('li');
+    li.className = 'card item-row';
+    li.innerHTML = `
+        <div class="item-info">
+            <strong class="item-title"><span class="stock-semaphore" title="${semaphore.label}">${semaphore.color}</span> ${p.name}</strong>
+            <div class="product-meta">${p.category} | Objetivo: ${p.targetStock} ${unit}</div>
+        </div>
+        <div class="stock-controls">
+            <button class="btn-qty" onclick="changeStock('${p.id}', -${step})" ${isMinDisabled}>-</button>
+            <span class="qty-badge">${p.currentStock} ${unit}</span>
+            <button class="btn-qty" onclick="changeStock('${p.id}', ${step})">+</button>
+        </div>
+    `;
+    return li;
+}
+
+function changeStock(id, delta) {
+    const prod = products.find(p => p.id === id);
+    if (prod) {
+        const newStock = prod.currentStock + delta;
+        if (newStock >= 0) {
+            prod.currentStock = Math.round(newStock * 100) / 100;
+            saveState();
+            renderInventario();
+        }
+    }
+}
+
+/* ==========================================================================
+   RENDERIZADO DE PRODUCTOS EN CATÁLOGO
+   ========================================================================== */
+function renderProductos() {
+    const container = document.getElementById('contenedor-productos');
+    const searchInput = document.getElementById('search-productos');
+    if (!container) return;
+    const query = normalizeText(searchInput ? searchInput.value : '');
+    container.innerHTML = '';
+
+    const filtered = products.filter(p => 
+        normalizeText(p.name).includes(query) || normalizeText(p.category).includes(query)
+    );
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-msg card">No hay productos definidos.</div>';
+        return;
+    }
+
+    const grouped = filtered.reduce((acc, p) => {
+        acc[p.category] = acc[p.category] || [];
+        acc[p.category].push(p);
+        return acc;
+    }, {});
+
+    Object.keys(grouped).forEach(cat => {
+        const groupEl = document.createElement('div');
+        groupEl.className = 'category-group card';
+
+        let itemsHtml = grouped[cat].map(p => {
+            const unit = p.unit || 'ud';
+            return `
+                <div class="item-row inner-row">
+                    <div class="item-info">
+                        <strong class="item-title">${p.name}</strong>
+                        <div class="product-meta">Stock: ${p.currentStock} / Obj: ${p.targetStock} ${unit}</div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-secondary small" onclick="openModal('${p.id}')">Editar</button>
+                        <button class="btn btn-danger small" onclick="deleteProduct('${p.id}')">Borrar</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        groupEl.innerHTML = `
+            <div class="category-title">${cat}</div>
+            <div class="category-items">${itemsHtml}</div>
+        `;
+        container.appendChild(groupEl);
+    });
+}
+
+function deleteProduct(id) {
+    const prod = products.find(p => p.id === id);
+    if (confirm(`¿Estás seguro de eliminar "${prod ? prod.name : 'este producto'}"?`)) {
+        products = products.filter(p => p.id !== id);
+        saveState();
+        renderProductos();
+        showToast('Producto eliminado', 'warning');
+    }
+}
+
+/* ==========================================================================
+   RENDERIZADO DE CESTA DE LA COMPRA
+   ========================================================================== */
+function renderCompra() {
+    const container = document.getElementById('contenedor-compra');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const needed = products.filter(p => p.currentStock < p.targetStock);
+
+    if (needed.length === 0) {
+        container.innerHTML = '<div class="empty-msg card">¡Todo abastecido! No necesitas comprar nada.</div>';
+        return;
+    }
+
+    const grouped = needed.reduce((acc, p) => {
+        acc[p.category] = acc[p.category] || [];
+        acc[p.category].push(p);
+        return acc;
+    }, {});
+
+    Object.keys(grouped).forEach(cat => {
+        const groupEl = document.createElement('div');
+        groupEl.className = 'category-group card';
+
+        let itemsHtml = grouped[cat].map(p => {
+            const unit = p.unit || 'ud';
+            const step = getStepForUnit(unit);
+            const defaultQtyToBuy = Math.round((p.targetStock - p.currentStock) * 100) / 100;
+            
+            if (!(p.id in cartAdjustments)) {
+                cartAdjustments[p.id] = defaultQtyToBuy;
+            }
+
+            const currentBuyVal = cartAdjustments[p.id];
+            const isChecked = selectedCartIds.has(p.id) ? 'checked' : '';
+
+            return `
+                <div class="item-row inner-row shopping-item">
+                    <label class="checkbox-label">
+                        <input type="checkbox" class="purchase-check" data-id="${p.id}" ${isChecked} onchange="handleCartCheck(this)">
+                        <span class="item-title">${p.name}</span>
+                    </label>
+                    <div class="cart-qty-adjuster">
+                        <button class="btn-qty small" onclick="adjustCartQty('${p.id}', -${step})">-</button>
+                        <input type="number" class="cart-qty-input item-qty" value="${currentBuyVal}" min="0" step="${step}" onchange="updateCartInput('${p.id}', this.value)">
+                        <span class="unit-text">${unit}</span>
+                        <button class="btn-qty small" onclick="adjustCartQty('${p.id}', ${step})">+</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        groupEl.innerHTML = `
+            <div class="category-title">${cat}</div>
+            <div class="category-items">${itemsHtml}</div>
+        `;
+        container.appendChild(groupEl);
+    });
+}
+
+function handleCartCheck(checkbox) {
+    const id = checkbox.getAttribute('data-id');
+    if (checkbox.checked) {
+        selectedCartIds.add(id);
+    } else {
+        selectedCartIds.delete(id);
+    }
+    if ('vibrate' in navigator) { try { navigator.vibrate(20); } catch (e) {} }
+}
+
+function adjustCartQty(id, delta) {
+    const prod = products.find(p => p.id === id);
+    if (!prod) return;
+
+    const currentVal = cartAdjustments[id] !== undefined ? cartAdjustments[id] : (prod.targetStock - prod.currentStock);
+    const newVal = Math.round(Math.max(0, currentVal + delta) * 100) / 100;
+    
+    cartAdjustments[id] = newVal;
+    renderCompra();
+}
+
+function updateCartInput(id, val) {
+    const numericVal = parseFloat(val);
+    if (!isNaN(numericVal) && numericVal >= 0) {
+        cartAdjustments[id] = Math.round(numericVal * 100) / 100;
+    } else {
+        cartAdjustments[id] = 0;
+    }
+    renderCompra();
+}
+
+const selectAllBtn = document.getElementById('btn-select-all');
+if (selectAllBtn) {
+    selectAllBtn.addEventListener('click', () => {
+        const checkboxes = document.querySelectorAll('.purchase-check');
+        checkboxes.forEach(chk => {
+            chk.checked = true;
+            selectedCartIds.add(chk.getAttribute('data-id'));
+        });
+        if ('vibrate' in navigator) { try { navigator.vibrate(20); } catch(e) {} }
+    });
+}
+
+const deselectAllBtn = document.getElementById('btn-deselect-all');
+if (deselectAllBtn) {
+    deselectAllBtn.addEventListener('click', () => {
+        const checkboxes = document.querySelectorAll('.purchase-check');
+        checkboxes.forEach(chk => chk.checked = false);
+        selectedCartIds.clear();
+        if ('vibrate' in navigator) { try { navigator.vibrate(20); } catch(e) {} }
+    });
+}
+
+const finishPurchaseBtn = document.getElementById('btn-finish-purchase');
+if (finishPurchaseBtn) {
+    finishPurchaseBtn.addEventListener('click', () => {
+        const checked = document.querySelectorAll('.purchase-check:checked');
+        if (checked.length === 0) {
+            alert('Marca al menos un elemento comprado.');
+            return;
+        }
+
+        checked.forEach(chk => {
+            const id = chk.getAttribute('data-id');
+            const prod = products.find(p => p.id === id);
+            if (prod) {
+                const addedQty = cartAdjustments[id] !== undefined ? cartAdjustments[id] : (prod.targetStock - prod.currentStock);
+                prod.currentStock = Math.round((prod.currentStock + addedQty) * 100) / 100;
+                delete cartAdjustments[id];
+                selectedCartIds.delete(id);
+            }
+        });
+
+        saveState();
+        renderCompra();
+        showToast('stock repuesto con éxito', 'success');
+    });
+}
+
+/* ==========================================================================
+   MODO LISTA COMPACTA (PANTALLA COMPLETA)
+   ========================================================================== */
+const compactOverlay = document.getElementById('compact-mode-overlay');
+const exitCompactBtn = document.getElementById('btn-exit-compact');
 
 if (exitCompactBtn) {
     exitCompactBtn.addEventListener('click', () => {
@@ -249,13 +674,11 @@ if (exitCompactBtn) {
 }
 
 function openCompactMode() {
-    isCompactMode = true;
     if (compactOverlay) compactOverlay.classList.remove('hidden');
     renderCompactList();
 }
 
 function closeCompactMode() {
-    isCompactMode = false;
     if (compactOverlay) compactOverlay.classList.add('hidden');
     renderCompra();
 }
@@ -268,7 +691,7 @@ function renderCompactList() {
     const needed = products.filter(p => p.currentStock < p.targetStock);
 
     if (needed.length === 0) {
-        overlayBody.innerHTML = '<div class="empty-msg card" style="background:#222; color:#fff;">¡Todo abastecido! No necesitas comprar nada.</div>';
+        overlayBody.innerHTML = '<div class="empty-msg card">¡Todo abastecido! No necesitas comprar nada.</div>';
         return;
     }
 
@@ -330,46 +753,76 @@ function toggleCompactCheck(id) {
 }
 
 /* ==========================================================================
-   COPIAR LISTA DE LA COMPRA AL PORTAPAPELES (v1.8.0)
+   COPIAR LISTA AL PORTAPAPELES
    ========================================================================== */
-const copyClipboardBtn = document.getElementById('btn-copy-clipboard');
-if (copyClipboardBtn) {
-    copyClipboardBtn.addEventListener('click', () => {
-        const needed = products.filter(p => p.currentStock < p.targetStock);
-        if (needed.length === 0) {
-            showToast('La lista de la compra está vacía', 'warning');
-            return;
-        }
+function copyShoppingListToClipboard() {
+    const needed = products.filter(p => p.currentStock < p.targetStock);
+    if (needed.length === 0) {
+        showToast('La lista de la compra está vacía', 'warning');
+        return;
+    }
 
-        const grouped = needed.reduce((acc, p) => {
-            acc[p.category] = acc[p.category] || [];
-            acc[p.category].push(p);
-            return acc;
-        }, {});
+    const grouped = needed.reduce((acc, p) => {
+        acc[p.category] = acc[p.category] || [];
+        acc[p.category].push(p);
+        return acc;
+    }, {});
 
-        let textToCopy = "🛒 LISTA DE LA COMPRA - MI DESPENSA\n\n";
-        Object.keys(grouped).forEach(cat => {
-            textToCopy += `[ ${cat.toUpperCase()} ]\n`;
-            grouped[cat].forEach(p => {
-                const qty = cartAdjustments[p.id] !== undefined ? cartAdjustments[p.id] : Math.round((p.targetStock - p.currentStock) * 100) / 100;
-                const unit = p.unit || 'ud';
-                const isMarked = selectedCartIds.has(p.id) ? '✓ ' : '• ';
-                textToCopy += `${isMarked}${p.name}: ${qty} ${unit}\n`;
-            });
-            textToCopy += "\n";
+    let textToCopy = "🛒 LISTA DE LA COMPRA - MI DESPENSA\n\n";
+    Object.keys(grouped).forEach(cat => {
+        textToCopy += `[ ${cat.toUpperCase()} ]\n`;
+        grouped[cat].forEach(p => {
+            const qty = cartAdjustments[p.id] !== undefined ? cartAdjustments[p.id] : Math.round((p.targetStock - p.currentStock) * 100) / 100;
+            const unit = p.unit || 'ud';
+            const isMarked = selectedCartIds.has(p.id) ? '✓ ' : '• ';
+            textToCopy += `${isMarked}${p.name}: ${qty} ${unit}\n`;
         });
+        textToCopy += "\n";
+    });
 
-        navigator.clipboard.writeText(textToCopy.trim()).then(() => {
-            showToast('Copiado al portapapeles', 'success');
-        }).catch(err => {
-            alert('No se pudo copiar al portapapeles.');
-        });
+    navigator.clipboard.writeText(textToCopy.trim()).then(() => {
+        showToast('Copiado al portapapeles', 'success');
+    }).catch(err => {
+        alert('No se pudo copiar al portapapeles.');
     });
 }
 
 /* ==========================================================================
-   GESTIÓN DE MODAL (CREACIÓN / EDICIÓN)
+   ESTADÍSTICAS Y MODAL
    ========================================================================== */
+function updateStats() {
+    const totalProd = products.length;
+    const totalProdEl = document.getElementById('stat-total-prod');
+    if (totalProdEl) totalProdEl.textContent = totalProd;
+
+    const lowStockCount = products.filter(p => p.currentStock < p.targetStock).length;
+    const lowStockEl = document.getElementById('stat-low-stock');
+    if (lowStockEl) lowStockEl.textContent = lowStockCount;
+
+    const coverageEl = document.getElementById('stat-coverage');
+    if (totalProd > 0) {
+        const sumCurrent = products.reduce((acc, p) => acc + p.currentStock, 0);
+        const sumTarget = products.reduce((acc, p) => acc + p.targetStock, 0);
+        const coverage = sumTarget > 0 ? Math.min(100, Math.round((sumCurrent / sumTarget) * 100)) : 0;
+        if (coverageEl) coverageEl.textContent = `${coverage}%`;
+    } else {
+        if (coverageEl) coverageEl.textContent = '0%';
+    }
+
+    const topCatEl = document.getElementById('stat-top-cat');
+    if (totalProd > 0) {
+        const catCounts = products.reduce((acc, p) => {
+            acc[p.category] = (acc[p.category] || 0) + 1;
+            return acc;
+        }, {});
+
+        const topCat = Object.keys(catCounts).reduce((a, b) => catCounts[a] > catCounts[b] ? a : b);
+        if (topCatEl) topCatEl.textContent = topCat;
+    } else {
+        if (topCatEl) topCatEl.textContent = '-';
+    }
+}
+
 const modal = document.getElementById('product-modal');
 const productForm = document.getElementById('product-form');
 
@@ -454,386 +907,10 @@ if (productForm) {
     });
 }
 
-/* ==========================================================================
-   RENDERIZADO Y FILTRADO CROMÁTICO EN INVENTARIO
-   ========================================================================== */
-function renderInventario() {
-    const list = document.getElementById('lista-inventario');
-    const searchInput = document.getElementById('search-inventario');
-    if (!list) return;
-    const query = normalizeText(searchInput ? searchInput.value : '');
-    list.innerHTML = '';
-
-    let filtered = products.filter(p => 
-        normalizeText(p.name).includes(query) || normalizeText(p.category).includes(query)
-    );
-
-    if (activeFilter === 'red') {
-        filtered = filtered.filter(p => p.currentStock === 0);
-    } else if (activeFilter === 'orange') {
-        filtered = filtered.filter(p => {
-            if (p.currentStock === 0) return false;
-            return (p.currentStock / p.targetStock) <= 0.25;
-        });
-    } else if (activeFilter === 'yellow') {
-        filtered = filtered.filter(p => {
-            if (p.currentStock === 0) return false;
-            const r = p.currentStock / p.targetStock;
-            return r > 0.25 && r <= 0.50;
-        });
-    } else if (activeFilter === 'green') {
-        filtered = filtered.filter(p => {
-            if (p.currentStock === 0) return false;
-            return (p.currentStock / p.targetStock) > 0.50;
-        });
-    }
-
-    if (filtered.length === 0) {
-        list.innerHTML = '<li class="empty-msg card">No hay productos que coincidan con el filtro seleccionado.</li>';
-        return;
-    }
-
-    filtered.forEach(p => {
-        const unit = p.unit || 'ud';
-        const step = getStepForUnit(unit);
-        const isMinDisabled = p.currentStock <= 0 ? 'disabled' : '';
-        const semaphore = getStockSemaphore(p.currentStock, p.targetStock);
-
-        const li = document.createElement('li');
-        li.className = 'card item-row';
-        li.innerHTML = `
-            <div class="item-info">
-                <strong class="item-title"><span class="stock-semaphore" title="${semaphore.label}">${semaphore.color}</span> ${p.name}</strong>
-                <div class="product-meta">${p.category} | Objetivo: ${p.targetStock} ${unit}</div>
-            </div>
-            <div class="stock-controls">
-                <button class="btn-qty" onclick="changeStock('${p.id}', -${step})" ${isMinDisabled}>-</button>
-                <span class="qty-badge">${p.currentStock} ${unit}</span>
-                <button class="btn-qty" onclick="changeStock('${p.id}', ${step})">+</button>
-            </div>
-        `;
-        list.appendChild(li);
-    });
-}
-
-function changeStock(id, delta) {
-    const prod = products.find(p => p.id === id);
-    if (prod) {
-        const newStock = prod.currentStock + delta;
-        if (newStock >= 0) {
-            prod.currentStock = Math.round(newStock * 100) / 100;
-            saveState();
-            renderInventario();
-        }
-    }
-}
-
-/* ==========================================================================
-   RENDERIZADO CON AGRUPACIÓN POR CATEGORÍAS EN PRODUCTOS
-   ========================================================================== */
-function renderProductos() {
-    const container = document.getElementById('contenedor-productos');
-    const searchInput = document.getElementById('search-productos');
-    if (!container) return;
-    const query = normalizeText(searchInput ? searchInput.value : '');
-    container.innerHTML = '';
-
-    const filtered = products.filter(p => 
-        normalizeText(p.name).includes(query) || normalizeText(p.category).includes(query)
-    );
-
-    if (filtered.length === 0) {
-        container.innerHTML = '<div class="empty-msg card">No hay productos definidos.</div>';
-        return;
-    }
-
-    const grouped = filtered.reduce((acc, p) => {
-        acc[p.category] = acc[p.category] || [];
-        acc[p.category].push(p);
-        return acc;
-    }, {});
-
-    Object.keys(grouped).forEach(cat => {
-        const groupEl = document.createElement('div');
-        groupEl.className = 'category-group card';
-
-        let itemsHtml = grouped[cat].map(p => {
-            const unit = p.unit || 'ud';
-            return `
-                <div class="item-row inner-row">
-                    <div class="item-info">
-                        <strong class="item-title">${p.name}</strong>
-                        <div class="product-meta">Stock: ${p.currentStock} / Obj: ${p.targetStock} ${unit}</div>
-                    </div>
-                    <div class="actions">
-                        <button class="btn btn-secondary small" onclick="openModal('${p.id}')">Editar</button>
-                        <button class="btn btn-danger small" onclick="deleteProduct('${p.id}')">Borrar</button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        groupEl.innerHTML = `
-            <div class="category-title">${cat}</div>
-            <div class="category-items">${itemsHtml}</div>
-        `;
-        container.appendChild(groupEl);
-    });
-}
-
-function deleteProduct(id) {
-    const prod = products.find(p => p.id === id);
-    if (confirm(`¿Estás seguro de eliminar "${prod ? prod.name : 'este producto'}"?`)) {
-        products = products.filter(p => p.id !== id);
-        saveState();
-        renderProductos();
-        showToast('Producto eliminado', 'warning');
-    }
-}
-
-/* ==========================================================================
-   RENDERIZADO Y PERSISTENCIA DE SELECCIÓN EN CESTA (CON HÁPTICA)
-   ========================================================================== */
-function renderCompra() {
-    const container = document.getElementById('contenedor-compra');
-    if (!container) return;
-    container.innerHTML = '';
-
-    const needed = products.filter(p => p.currentStock < p.targetStock);
-
-    if (needed.length === 0) {
-        container.innerHTML = '<div class="empty-msg card">¡Todo abastecido! No necesitas comprar nada.</div>';
-        return;
-    }
-
-    const grouped = needed.reduce((acc, p) => {
-        acc[p.category] = acc[p.category] || [];
-        acc[p.category].push(p);
-        return acc;
-    }, {});
-
-    Object.keys(grouped).forEach(cat => {
-        const groupEl = document.createElement('div');
-        groupEl.className = 'category-group card';
-
-        let itemsHtml = grouped[cat].map(p => {
-            const unit = p.unit || 'ud';
-            const step = getStepForUnit(unit);
-            const defaultQtyToBuy = Math.round((p.targetStock - p.currentStock) * 100) / 100;
-            
-            if (!(p.id in cartAdjustments)) {
-                cartAdjustments[p.id] = defaultQtyToBuy;
-            }
-
-            const currentBuyVal = cartAdjustments[p.id];
-            const isChecked = selectedCartIds.has(p.id) ? 'checked' : '';
-
-            return `
-                <div class="item-row inner-row shopping-item">
-                    <label class="checkbox-label">
-                        <input type="checkbox" class="purchase-check" data-id="${p.id}" ${isChecked} onchange="handleCartCheck(this)">
-                        <span class="item-title">${p.name}</span>
-                    </label>
-                    <div class="cart-qty-adjuster">
-                        <button class="btn-qty small-qty" onclick="adjustCartQty('${p.id}', -${step})">-</button>
-                        <input type="number" class="cart-qty-input item-qty" value="${currentBuyVal}" min="0" step="${step}" onchange="updateCartInput('${p.id}', this.value)">
-                        <span class="unit-text">${unit}</span>
-                        <button class="btn-qty small-qty" onclick="adjustCartQty('${p.id}', ${step})">+</button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        groupEl.innerHTML = `
-            <div class="category-title">${cat}</div>
-            <div class="category-items">${itemsHtml}</div>
-        `;
-        container.appendChild(groupEl);
-    });
-}
-
-function handleCartCheck(checkbox) {
-    const id = checkbox.getAttribute('data-id');
-    if (checkbox.checked) {
-        selectedCartIds.add(id);
-    } else {
-        selectedCartIds.delete(id);
-    }
-    if ('vibrate' in navigator) {
-        try { navigator.vibrate(20); } catch (e) {}
-    }
-}
-
-function adjustCartQty(id, delta) {
-    const prod = products.find(p => p.id === id);
-    if (!prod) return;
-
-    const currentVal = cartAdjustments[id] !== undefined ? cartAdjustments[id] : (prod.targetStock - prod.currentStock);
-    const newVal = Math.round(Math.max(0, currentVal + delta) * 100) / 100;
-    
-    cartAdjustments[id] = newVal;
-    renderCompra();
-}
-
-function updateCartInput(id, val) {
-    const numericVal = parseFloat(val);
-    if (!isNaN(numericVal) && numericVal >= 0) {
-        cartAdjustments[id] = Math.round(numericVal * 100) / 100;
-    } else {
-        cartAdjustments[id] = 0;
-    }
-    renderCompra();
-}
-
-const selectAllBtn = document.getElementById('btn-select-all');
-if (selectAllBtn) {
-    selectAllBtn.addEventListener('click', () => {
-        const checkboxes = document.querySelectorAll('.purchase-check');
-        checkboxes.forEach(chk => {
-            chk.checked = true;
-            selectedCartIds.add(chk.getAttribute('data-id'));
-        });
-        if ('vibrate' in navigator) { try { navigator.vibrate(20); } catch(e) {} }
-    });
-}
-
-const deselectAllBtn = document.getElementById('btn-deselect-all');
-if (deselectAllBtn) {
-    deselectAllBtn.addEventListener('click', () => {
-        const checkboxes = document.querySelectorAll('.purchase-check');
-        checkboxes.forEach(chk => chk.checked = false);
-        selectedCartIds.clear();
-        if ('vibrate' in navigator) { try { navigator.vibrate(20); } catch(e) {} }
-    });
-}
-
-const finishPurchaseBtn = document.getElementById('btn-finish-purchase');
-if (finishPurchaseBtn) {
-    finishPurchaseBtn.addEventListener('click', () => {
-        const checked = document.querySelectorAll('.purchase-check:checked');
-        if (checked.length === 0) {
-            alert('Marca al menos un elemento comprado.');
-            return;
-        }
-
-        checked.forEach(chk => {
-            const id = chk.getAttribute('data-id');
-            const prod = products.find(p => p.id === id);
-            if (prod) {
-                const addedQty = cartAdjustments[id] !== undefined ? cartAdjustments[id] : (prod.targetStock - prod.currentStock);
-                prod.currentStock = Math.round((prod.currentStock + addedQty) * 100) / 100;
-                delete cartAdjustments[id];
-                selectedCartIds.delete(id);
-            }
-        });
-
-        saveState();
-        renderCompra();
-        showToast('stock repuesto con éxito', 'success');
-    });
-}
-
-/* ==========================================================================
-   ESTADÍSTICAS AVANZADAS
-   ========================================================================== */
-function updateStats() {
-    const totalProd = products.length;
-    const totalProdEl = document.getElementById('stat-total-prod');
-    if (totalProdEl) totalProdEl.textContent = totalProd;
-
-    const lowStockCount = products.filter(p => p.currentStock < p.targetStock).length;
-    const lowStockEl = document.getElementById('stat-low-stock');
-    if (lowStockEl) lowStockEl.textContent = lowStockCount;
-
-    const coverageEl = document.getElementById('stat-coverage');
-    if (totalProd > 0) {
-        const sumCurrent = products.reduce((acc, p) => acc + p.currentStock, 0);
-        const sumTarget = products.reduce((acc, p) => acc + p.targetStock, 0);
-        const coverage = sumTarget > 0 ? Math.min(100, Math.round((sumCurrent / sumTarget) * 100)) : 0;
-        if (coverageEl) coverageEl.textContent = `${coverage}%`;
-    } else {
-        if (coverageEl) coverageEl.textContent = '0%';
-    }
-
-    const topCatEl = document.getElementById('stat-top-cat');
-    if (totalProd > 0) {
-        const catCounts = products.reduce((acc, p) => {
-            acc[p.category] = (acc[p.category] || 0) + 1;
-            return acc;
-        }, {});
-
-        const topCat = Object.keys(catCounts).reduce((a, b) => catCounts[a] > catCounts[b] ? a : b);
-        if (topCatEl) topCatEl.textContent = topCat;
-    } else {
-        if (topCatEl) topCatEl.textContent = '-';
-    }
-}
-
-/* ==========================================================================
-   RESPALDOS Y EVENTOS DE CARGA
-   ========================================================================== */
-const exportBackupBtn = document.getElementById('btn-export-backup');
-if (exportBackupBtn) {
-    exportBackupBtn.addEventListener('click', () => {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-
-        const fileName = `despensa_backup_${year}-${month}-${day}_${hours}${minutes}.json`;
-
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(products, null, 2));
-        const dlAnchor = document.createElement('a');
-        dlAnchor.setAttribute("href", dataStr);
-        dlAnchor.setAttribute("download", fileName);
-        document.body.appendChild(dlAnchor);
-        dlAnchor.click();
-        dlAnchor.remove();
-        showToast('Copia exportada correctamente', 'info');
-    });
-}
-
-const importBackupFile = document.getElementById('file-import-backup');
-if (importBackupFile) {
-    importBackupFile.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            try {
-                const imported = JSON.parse(event.target.result);
-                if (Array.isArray(imported)) {
-                    products = imported;
-                    saveState();
-                    renderInventario();
-                    showToast('Datos importados con éxito', 'success');
-                } else {
-                    throw new Error('Formato no válido');
-                }
-            } catch (err) {
-                alert('Error al importar archivo. Asegúrate de que sea un JSON válido.');
-            }
-        };
-        reader.readAsText(file);
-    });
-}
-
-const openModalInvBtn = document.getElementById('btn-open-modal-inv');
-if (openModalInvBtn) openModalInvBtn.addEventListener('click', () => openModal());
-const openModalProdBtn = document.getElementById('btn-open-modal-prod');
-if (openModalProdBtn) openModalProdBtn.addEventListener('click', () => openModal());
 const closeModalBtn = document.getElementById('btn-close-modal');
 if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
 const cancelModalBtn = document.getElementById('btn-cancel-modal');
 if (cancelModalBtn) cancelModalBtn.addEventListener('click', closeModal);
-
-const searchInvInput = document.getElementById('search-inventario');
-if (searchInvInput) searchInvInput.addEventListener('input', renderInventario);
-const searchProdInput = document.getElementById('search-productos');
-if (searchProdInput) searchProdInput.addEventListener('input', renderProductos);
 
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
@@ -841,4 +918,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initFilters();
     updateCartBadge();
     renderInventario();
+
+    setupSearchWithClear('search-inventario', 'clear-search-inventario', renderInventario);
+    setupSearchWithClear('search-productos', 'clear-search-productos', renderProductos);
 });

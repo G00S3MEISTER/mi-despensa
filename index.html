@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Control de Inventario Doméstico v1.8.0</title>
+    <title>Control de Inventario Doméstico v1.8.4</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4a90e2">
@@ -12,11 +12,11 @@
 </head>
 <body>
 
-    <!-- ENCABEZADO PRINCIPAL -->
-    <header class="topbar app-header-item">
-        <div>
-            <h1>Despensa & Stock</h1>
-            <p>Control de Inventario Doméstico</p>
+    <!-- ENCABEZADO SUPERIOR CONTEXTUAL (v1.8.4) -->
+    <header class="topbar">
+        <div id="topbar-title" class="topbar-title">📋 Mi Inventario</div>
+        <div id="topbar-actions" class="topbar-actions">
+            <!-- Dinámico según pestaña -->
         </div>
     </header>
 
@@ -27,37 +27,29 @@
 
         <!-- PESTAÑA 1: INVENTARIO -->
         <section id="tab-inventario" class="tab-content active">
-            <div class="section-header">
-                <h2>Mi Inventario</h2>
-                <button id="btn-open-modal-inv" class="btn btn-primary small">+ Nuevo</button>
-            </div>
-
             <div class="search-box">
                 <input type="text" id="search-inventario" placeholder="Buscar por nombre o categoría...">
+                <button type="button" id="clear-search-inventario" class="clear-search-btn hidden" title="Limpiar búsqueda">✕</button>
             </div>
 
-            <!-- Chips de filtrado cromático sincronizado -->
-            <div class="filter-chips">
-                <button class="chip active" data-filter="all">Todos</button>
-                <button class="chip chip-red" data-filter="red">🔴 Sin Stock</button>
-                <button class="chip chip-orange" data-filter="orange">🟠 Crítico (≤25%)</button>
-                <button class="chip chip-yellow" data-filter="yellow">🟡 En Reserva (≤50%)</button>
-                <button class="chip chip-green" data-filter="green">🟢 Saludable (>50%)</button>
+            <!-- Chips de filtrado horizontal compacto y simétrico con umbrales acumulativos -->
+            <div class="filter-chips-scroll">
+                <div class="filter-chips">
+                    <button class="chip active" data-filter="all">⚪ Todos</button>
+                    <button class="chip chip-red" data-filter="red">🔴 0%</button>
+                    <button class="chip chip-orange" data-filter="orange">🟠 &lt;25%</button>
+                    <button class="chip chip-yellow" data-filter="yellow">🟡 &lt;50%</button>
+                    <button class="chip chip-green" data-filter="green">🟢 &gt;50%</button>
+                </div>
             </div>
 
-            <ul id="lista-inventario" class="item-list"></ul>
+            <div id="lista-inventario-container">
+                <!-- Renderizado dinámico según vista (Agrupado o Lista A-Z) -->
+            </div>
         </section>
 
         <!-- PESTAÑA 2: CESTA DE LA COMPRA -->
         <section id="tab-compra" class="tab-content">
-            <div class="section-header">
-                <h2>Lista de la Compra</h2>
-                <div class="header-actions-inline">
-                    <button id="btn-copy-clipboard" class="btn btn-secondary small" title="Copiar lista como texto">📋 Copiar</button>
-                    <button id="btn-toggle-compact" class="btn btn-super-toggle small">Modo Compacto 🖥️</button>
-                </div>
-            </div>
-
             <div class="bulk-actions-bar">
                 <button id="btn-select-all" class="btn btn-secondary small">Marcar Todos</button>
                 <button id="btn-deselect-all" class="btn btn-secondary small">Desmarcar Todos</button>
@@ -72,13 +64,9 @@
 
         <!-- PESTAÑA 3: PRODUCTOS -->
         <section id="tab-productos" class="tab-content">
-            <div class="section-header">
-                <h2>Catálogo de Productos</h2>
-                <button id="btn-open-modal-prod" class="btn btn-primary small">+ Nuevo</button>
-            </div>
-
             <div class="search-box">
                 <input type="text" id="search-productos" placeholder="Buscar producto...">
+                <button type="button" id="clear-search-productos" class="clear-search-btn hidden" title="Limpiar búsqueda">✕</button>
             </div>
 
             <div id="contenedor-productos"></div>
@@ -98,10 +86,10 @@
                 </div>
             </div>
 
-            <!-- Gestión de Pasillos / Categorías (v1.8.0) -->
+            <!-- Gestión de Pasillos / Categorías -->
             <div class="card">
                 <h3>Gestión de Pasillos / Categorías</h3>
-                <p class="product-meta">Añade o elimina los pasillos disponibles para tus productos.</p>
+                <p class="product-meta">Añade o elimina pasillos. Al borrar uno, sus productos pasarán a "Otros".</p>
                 <div class="form-row" style="margin-top: 0.5rem;">
                     <input type="text" id="new-category-input" placeholder="Nombre del pasillo (ej. Frutería)">
                     <button id="btn-add-category" class="btn btn-primary">Añadir</button>
@@ -144,25 +132,23 @@
             </div>
 
             <div class="app-version-footer">
-                Versión de la app: v1.8.0
+                Versión de la app: v1.8.4
             </div>
         </section>
 
     </main>
 
-    <!-- MODO LISTA COMPACTA A PANTALLA COMPLETA (v1.8.0) -->
+    <!-- MODO LISTA COMPACTA A PANTALLA COMPLETA -->
     <div id="compact-mode-overlay" class="compact-overlay hidden">
         <div class="compact-overlay-header">
             <h2>🛒 Lista Compacta (Supermercado)</h2>
             <button id="btn-exit-compact" class="btn btn-danger small">Salir ✕</button>
         </div>
-        <div id="compact-overlay-body" class="compact-overlay-body">
-            <!-- Contenido dinámico en tabla/cuaderno -->
-        </div>
+        <div id="compact-overlay-body" class="compact-overlay-body"></div>
     </div>
 
     <!-- NAVEGACIÓN INFERIOR FIJA -->
-    <nav class="bottom-nav app-header-item">
+    <nav class="bottom-nav">
         <button class="nav-btn active" data-tab="inventario">
             <span class="icon">📋</span>
             <span>Inventario</span>
@@ -196,9 +182,7 @@
                 <input type="text" id="product-name" required placeholder="Ej. Leche entera, Arroz, Jamón">
 
                 <label for="product-category">Categoría / Pasillo *</label>
-                <select id="product-category" required>
-                    <!-- Dinámico -->
-                </select>
+                <select id="product-category" required></select>
 
                 <label for="prod-unidad">Unidad de medida</label>
                 <select id="prod-unidad">
