@@ -1,4 +1,4 @@
-const CACHE_NAME = 'despensa-pwa-v1.7.1';
+const CACHE_NAME = 'despensa-pwa-v1.7.2-stable';
 const ASSETS_TO_CACHE = [
   './index.html',
   './styles.css',
@@ -18,7 +18,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activación: Limpieza de cachés antiguas (v1.7.1)
+// Activación: Limpieza rigurosa de cachés antiguas (v1.7.2)
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {

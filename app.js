@@ -1,10 +1,10 @@
 /* ==========================================================================
-   REGISTRO DEL SERVICE WORKER (v1.7.1)
+   REGISTRO DEL SERVICE WORKER (v1.7.2 Estable)
    ========================================================================== */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker registrado correctamente:', reg.scope))
+      .then(reg => console.log('Service Worker registrado correctamente (v1.7.2):', reg.scope))
       .catch(err => console.error('Error al registrar Service Worker:', err));
   });
 }
@@ -15,7 +15,7 @@ if ('serviceWorker' in navigator) {
 let products = JSON.parse(localStorage.getItem('inventory_products')) || [];
 let activeFilter = 'all'; // 'all', 'red', 'orange', 'yellow', 'green'
 let cartAdjustments = {}; 
-let selectedCartIds = new Set(); // Persistencia de selección en cesta
+let selectedCartIds = new Set(); // Persistencia de selecciones en Cesta
 let wakeLock = null;
 let isSuperMode = false;
 
@@ -30,7 +30,7 @@ const getStepForUnit = (unit) => {
     return 1;
 };
 
-// Semáforo de Inventario v1.7.1 con umbrales estrictos
+// Semáforo de Inventario v1.7.2 con umbrales estrictos
 const getStockSemaphore = (current, target) => {
     if (current === 0) return { color: '🔴', label: 'Sin Stock' };
     const ratio = current / target;
@@ -262,7 +262,7 @@ if (productForm) {
 }
 
 /* ==========================================================================
-   RENDERIZADO Y FILTRADO CROMÁTICO EN INVENTARIO (v1.7.1)
+   RENDERIZADO Y FILTRADO CROMÁTICO EN INVENTARIO
    ========================================================================== */
 function renderInventario() {
     const list = document.getElementById('lista-inventario');
@@ -275,7 +275,6 @@ function renderInventario() {
         normalizeText(p.name).includes(query) || normalizeText(p.category).includes(query)
     );
 
-    // Filtrado por color de alerta
     if (activeFilter === 'red') {
         filtered = filtered.filter(p => p.currentStock === 0);
     } else if (activeFilter === 'orange') {
@@ -400,7 +399,7 @@ function deleteProduct(id) {
 }
 
 /* ==========================================================================
-   RENDERIZADO Y PERSISTENCIA DE SELECCIÓN EN CESTA
+   RENDERIZADO Y PERSISTENCIA DE SELECCIÓN EN CESTA (CON HÁPTICA v1.7.2)
    ========================================================================== */
 function renderCompra() {
     const container = document.getElementById('contenedor-compra');
@@ -467,6 +466,14 @@ function handleCartCheck(checkbox) {
     } else {
         selectedCartIds.delete(id);
     }
+    // Feedback háptico suave si está disponible (v1.7.2)
+    if ('vibrate' in navigator) {
+        try {
+            navigator.vibrate(20);
+        } catch (e) {
+            // Ignorar restricciones del navegador si no hay interacción previa o permiso
+        }
+    }
 }
 
 function adjustCartQty(id, delta) {
@@ -498,6 +505,9 @@ if (selectAllBtn) {
             chk.checked = true;
             selectedCartIds.add(chk.getAttribute('data-id'));
         });
+        if ('vibrate' in navigator) {
+            try { navigator.vibrate(20); } catch(e) {}
+        }
     });
 }
 
@@ -507,6 +517,9 @@ if (deselectAllBtn) {
         const checkboxes = document.querySelectorAll('.purchase-check');
         checkboxes.forEach(chk => chk.checked = false);
         selectedCartIds.clear();
+        if ('vibrate' in navigator) {
+            try { navigator.vibrate(20); } catch(e) {}
+        }
     });
 }
 

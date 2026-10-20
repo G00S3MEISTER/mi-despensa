@@ -97,7 +97,7 @@ h2 {
     margin: 0;
 }
 
-/* CHIPS DE FILTRADO CROMÁTICO EN INVENTARIO (v1.7.1) */
+/* CHIPS DE FILTRADO CROMÁTICO EN INVENTARIO (v1.7.2) */
 .filter-chips {
     display: flex;
     gap: 0.4rem;
@@ -181,7 +181,7 @@ h2 {
 }
 
 /* ==========================================================================
-   MODO SÚPER AMOLED (v1.7.1)
+   MODO SÚPER AMOLED (v1.7.2 Estable)
    ========================================================================== */
 #tab-compra.super-mode {
     background-color: #000000 !important;
