@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Generador de Iconos - Mi Despensa v1.6.0</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #f3f4f6; }
+        button { background: #4a90e2; color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; margin: 10px; }
+        button:hover { background: #357abd; }
+    </style>
+</head>
+<body>
+    <h1>Generador de Iconos PWA</h1>
+    <p>Haz clic en los botones para descargar los iconos requeridos para tu repositorio.</p>
+    
+    <canvas id="canvas" style="display:none;"></canvas>
+    
+    <div>
+        <button onclick="downloadIcon(192)">Descargar icon-192.png</button>
+        <button onclick="downloadIcon(512)">Descargar icon-512.png</button>
+    </div>
+
+    <script>
+        function drawIcon(size) {
+            const canvas = document.getElementById('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Fondo corporativo sólido (Azul #4a90e2)
+            ctx.fillStyle = '#4a90e2';
+            ctx.fillRect(0, 0, size, size);
+
+            // Círculo central blanco de contraste (con zona de seguridad interna)
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size * 0.36, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Símbolo central minimalista (Cesta de la compra 🛒)
+            ctx.font = `${size * 0.38}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🛒', size / 2, size / 2);
+
+            return canvas.toDataURL('image/png');
+        }
+
+        function downloadIcon(size) {
+            const dataURL = drawIcon(size);
+            const link = document.createElement('a');
+            link.download = `icon-${size}.png`;
+            link.href = dataURL;
+            link.click();
+        }
+    </script>
+</body>
+</html>
