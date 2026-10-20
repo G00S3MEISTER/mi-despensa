@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <!-- Metadatos PWA y prevención de zoom involuntario -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Control de Inventario Doméstico v1.6.0</title>
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Vinculación del Manifiesto PWA -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Tema y configuración para Android e iOS -->
+    <meta name="theme-color" content="#4a90e2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+
+    <!-- ENCABEZADO PRINCIPAL -->
+    <header class="topbar">
+        <div>
+            <h1>Despensa & Stock</h1>
+            <p>Control de Inventario Doméstico</p>
+        </div>
+    </header>
+
+    <!-- CONTENEDOR DE NOTIFICACIONES TOAST -->
+    <div id="toast-container"></div>
+
+    <main class="main-container">
+
+        <!-- PESTAÑA 1: INVENTARIO -->
+        <section id="tab-inventario" class="tab-content active">
+            <div class="section-header">
+                <h2>Mi Inventario</h2>
+                <button id="btn-open-modal-inv" class="btn btn-primary small">+ Nuevo</button>
+            </div>
+
+            <div class="search-box">
+                <input type="text" id="search-inventario" placeholder="Buscar por nombre o categoría...">
+            </div>
+
+            <div class="filter-chips">
+                <button class="chip active" data-filter="all">Todos</button>
+                <button class="chip chip-agotado" data-filter="out">Agotados</button>
+                <button class="chip chip-minimos" data-filter="low">Bajo Mínimos</button>
+            </div>
+
+            <ul id="lista-inventario" class="item-list"></ul>
+        </section>
+
+        <!-- PESTAÑA 2: CESTA DE LA COMPRA (Incluye el Modo Súper v1.5.2+) -->
+        <section id="tab-compra" class="tab-content">
+            <div class="section-header">
+                <h2>Lista de la Compra</h2>
+                <button id="btn-toggle-super" class="btn btn-super-toggle">
+                    Modo Súper: <span id="super-status">OFF</span>
+                </button>
+            </div>
+
+            <div class="bulk-actions-bar">
+                <button id="btn-select-all" class="btn btn-secondary small">Marcar Todos</button>
+                <button id="btn-deselect-all" class="btn btn-secondary small">Desmarcar Todos</button>
+            </div>
+
+            <div id="contenedor-compra"></div>
+
+            <div class="cart-footer-action">
+                <button id="btn-finish-purchase" class="btn btn-success full">Reponer Seleccionados</button>
+            </div>
+        </section>
+
+        <!-- PESTAÑA 3: PRODUCTOS -->
+        <section id="tab-productos" class="tab-content">
+            <div class="section-header">
+                <h2>Catálogo de Productos</h2>
+                <button id="btn-open-modal-prod" class="btn btn-primary small">+ Nuevo</button>
+            </div>
+
+            <div class="search-box">
+                <input type="text" id="search-productos" placeholder="Buscar producto...">
+            </div>
+
+            <div id="contenedor-productos"></div>
+        </section>
+
+        <!-- PESTAÑA 4: AJUSTES Y DATOS -->
+        <section id="tab-ajustes" class="tab-content">
+            <div class="section-header">
+                <h2>Panel de Control y Respaldo</h2>
+            </div>
+
+            <div class="card">
+                <h3>Estadísticas Globales</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-label">Total Productos</span>
+                        <span id="stat-total-prod" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Bajo Mínimos</span>
+                        <span id="stat-low-stock" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Cobertura</span>
+                        <span id="stat-coverage" class="stat-value">0%</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Cat. Principal</span>
+                        <span id="stat-top-cat" class="stat-value">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Copia de Seguridad</h3>
+                <p class="product-meta">Exporta tus datos en formato JSON o restaura un respaldo previo.</p>
+                <div class="backup-actions-vertical">
+                    <button id="btn-export-backup" class="btn btn-primary full">Exportar Copia (.json)</button>
+                    <label for="file-import-backup" class="btn btn-secondary full btn-import-label">
+                        Importar Copia
+                        <input type="file" id="file-import-backup" accept=".json" style="display: none;">
+                    </label>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- NAVEGACIÓN INFERIOR FIJA -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active" data-tab="inventario">
+            <span class="icon">📋</span>
+            <span>Inventario</span>
+        </button>
+        <button class="nav-btn" data-tab="compra">
+            <span class="icon">🛒</span>
+            <span>Cesta</span>
+            <span id="badge-compra" class="badge hidden">0</span>
+        </button>
+        <button class="nav-btn" data-tab="productos">
+            <span class="icon">🏷️</span>
+            <span>Productos</span>
+        </button>
+        <button class="nav-btn" data-tab="ajustes">
+            <span class="icon">⚙️</span>
+            <span>Ajustes</span>
+        </button>
+    </nav>
+
+    <!-- MODAL DE CREACIÓN / EDICIÓN -->
+    <div id="product-modal" class="modal hidden">
+        <div class="modal-box">
+            <div class="modal-head">
+                <h3 id="modal-title">Añadir Producto</h3>
+                <button id="btn-close-modal" class="icon-btn">&times;</button>
+            </div>
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+                
+                <label for="product-name">Nombre del producto *</label>
+                <input type="text" id="product-name" required placeholder="Ej. Leche entera, Arroz, Jamón">
+
+                <label for="product-category">Categoría</label>
+                <input type="text" id="product-category" placeholder="Ej. Lácteos, Legumbres, Charcutería">
+
+                <label for="prod-unidad">Unidad de medida</label>
+                <select id="prod-unidad">
+                    <option value="ud">Unidades (ud)</option>
+                    <option value="kg">Kilogramos (kg)</option>
+                    <option value="g">Gramos (g)</option>
+                    <option value="L">Litros (L)</option>
+                    <option value="ml">Mililitros (ml)</option>
+                </select>
+
+                <div class="form-row">
+                    <div>
+                        <label for="product-current-stock">Stock actual</label>
+                        <input type="number" id="product-current-stock" step="any" min="0" value="0">
+                    </div>
+                    <div>
+                        <label for="product-target-stock">Stock objetivo *</label>
+                        <input type="number" id="product-target-stock" step="any" min="0.1" value="1" required>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="btn-cancel-modal" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
