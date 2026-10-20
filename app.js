@@ -133,12 +133,6 @@ function updateTopbarContext(tabName) {
         };
         actionsEl.appendChild(viewBtn);
 
-        const newInvBtn = document.createElement('button');
-        newInvBtn.className = 'btn btn-secondary small'; 
-        newInvBtn.textContent = '+ Nuevo';
-        newInvBtn.onclick = () => openModal();
-        actionsEl.appendChild(newInvBtn);
-
     } else if (tabName === 'compra') {
         titleEl.textContent = '🛒 Lista de Compra';
         const copyBtn = document.createElement('button');
