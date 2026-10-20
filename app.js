@@ -1,10 +1,10 @@
 /* ==========================================================================
-   REGISTRO DEL SERVICE WORKER (v1.7.2 Estable)
+   REGISTRO DEL SERVICE WORKER (v1.8.0)
    ========================================================================== */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker registrado correctamente (v1.7.2):', reg.scope))
+      .then(reg => console.log('Service Worker registrado correctamente (v1.8.0):', reg.scope))
       .catch(err => console.error('Error al registrar Service Worker:', err));
   });
 }
@@ -13,11 +13,15 @@ if ('serviceWorker' in navigator) {
    ESTADO Y BASE DE DATOS LOCAL
    ========================================================================== */
 let products = JSON.parse(localStorage.getItem('inventory_products')) || [];
+let categories = JSON.parse(localStorage.getItem('inventory_categories')) || [
+    'Lácteos', 'Frutería y Verdura', 'Carnicería', 'Pescadería', 'Despensa / Granel', 'Bebidas', 'Limpieza', 'Otros'
+];
+let darkMode = JSON.parse(localStorage.getItem('inventory_darkmode')) || false;
+
 let activeFilter = 'all'; // 'all', 'red', 'orange', 'yellow', 'green'
 let cartAdjustments = {}; 
 let selectedCartIds = new Set(); // Persistencia de selecciones en Cesta
-let wakeLock = null;
-let isSuperMode = false;
+let isCompactMode = false;
 
 const normalizeText = (text) => 
     text ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim() : "";
@@ -30,7 +34,7 @@ const getStepForUnit = (unit) => {
     return 1;
 };
 
-// Semáforo de Inventario v1.7.2 con umbrales estrictos
+// Semáforo de Inventario v1.8.0
 const getStockSemaphore = (current, target) => {
     if (current === 0) return { color: '🔴', label: 'Sin Stock' };
     const ratio = current / target;
@@ -41,8 +45,31 @@ const getStockSemaphore = (current, target) => {
 
 function saveState() {
     localStorage.setItem('inventory_products', JSON.stringify(products));
+    localStorage.setItem('inventory_categories', JSON.stringify(categories));
+    localStorage.setItem('inventory_darkmode', JSON.stringify(darkMode));
     updateStats();
     updateCartBadge();
+}
+
+/* ==========================================================================
+   INICIALIZACIÓN DE MODO OSCURO
+   ========================================================================== */
+function initTheme() {
+    if (darkMode) {
+        document.body.classList.add('dark-mode');
+    } else {
+        document.body.classList.remove('dark-mode');
+    }
+}
+
+const toggleDarkModeBtn = document.getElementById('btn-toggle-darkmode');
+if (toggleDarkModeBtn) {
+    toggleDarkModeBtn.addEventListener('click', () => {
+        darkMode = !darkMode;
+        saveState();
+        initTheme();
+        showToast(darkMode ? 'Modo Oscuro activado' : 'Modo Claro activado', 'info');
+    });
 }
 
 /* ==========================================================================
@@ -100,16 +127,91 @@ function initNavigation() {
             btn.classList.add('active');
             document.getElementById(`tab-${targetTab}`).classList.add('active');
 
-            if (targetTab !== 'compra' && isSuperMode) {
-                disableSuperMode();
-            }
-
             if (targetTab === 'inventario') renderInventario();
             if (targetTab === 'productos') renderProductos();
             if (targetTab === 'compra') renderCompra();
-            if (targetTab === 'ajustes') updateStats();
+            if (targetTab === 'ajustes') {
+                updateStats();
+                renderCategoriesManager();
+            }
         });
     });
+}
+
+/* ==========================================================================
+   GESTIÓN DE CATEGORÍAS / PASILLOS EN AJUSTES (v1.8.0)
+   ========================================================================== */
+function renderCategoriesManager() {
+    const container = document.getElementById('categories-list-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    categories.forEach(cat => {
+        const tag = document.createElement('div');
+        tag.className = 'category-tag-item';
+        tag.innerHTML = `
+            <span>${cat}</span>
+            ${categories.length > 1 ? `<button class="btn-del-cat" onclick="deleteCategory('${cat}')">×</button>` : ''}
+        `;
+        container.appendChild(tag);
+    });
+
+    updateCategorySelects();
+}
+
+function updateCategorySelects() {
+    const select = document.getElementById('product-category');
+    if (!select) return;
+    const currentVal = select.value;
+    select.innerHTML = '';
+    categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+    });
+    if (categories.includes(currentVal)) {
+        select.value = currentVal;
+    }
+}
+
+const addCatBtn = document.getElementById('btn-add-category');
+if (addCatBtn) {
+    addCatBtn.addEventListener('click', () => {
+        const input = document.getElementById('new-category-input');
+        if (!input) return;
+        const val = input.value.trim();
+        if (!val) return;
+        if (categories.includes(val)) {
+            alert('Este pasillo ya existe.');
+            return;
+        }
+        categories.push(val);
+        input.value = '';
+        saveState();
+        renderCategoriesManager();
+        showToast(`Pasillo "${val}" añadido`, 'success');
+    });
+}
+
+function deleteCategory(catName) {
+    if (categories.length <= 1) {
+        alert('Debe existir al menos un pasillo.');
+        return;
+    }
+    if (confirm(`¿Eliminar pasillo "${catName}"? Los productos asociados pasarán a "Otros".`)) {
+        categories = categories.filter(c => c !== catName);
+        if (!categories.includes('Otros')) categories.push('Otros');
+        
+        // Reasignar productos de esta categoría a "Otros"
+        products.forEach(p => {
+            if (p.category === catName) p.category = 'Otros';
+        });
+
+        saveState();
+        renderCategoriesManager();
+        showToast('Pasillo eliminado', 'warning');
+    }
 }
 
 /* ==========================================================================
@@ -128,51 +230,140 @@ function initFilters() {
 }
 
 /* ==========================================================================
-   GESTIÓN DE MODO SÚPER
+   NUEVO MODO LISTA COMPACTA A PANTALLA COMPLETA (v1.8.0)
    ========================================================================== */
-async function toggleWakeLock(enable) {
-    if ('wakeLock' in navigator && enable) {
-        try {
-            wakeLock = await navigator.wakeLock.request('screen');
-        } catch (err) {
-            console.log('Wake Lock no soportado o denegado.');
-        }
-    } else if (wakeLock) {
-        try {
-            await wakeLock.release();
-        } catch (err) {
-            console.log('Error al liberar Wake Lock.');
-        }
-        wakeLock = null;
+const toggleCompactBtn = document.getElementById('btn-toggle-compact');
+const exitCompactBtn = document.getElementById('btn-exit-compact');
+const compactOverlay = document.getElementById('compact-mode-overlay');
+
+if (toggleCompactBtn) {
+    toggleCompactBtn.addEventListener('click', () => {
+        openCompactMode();
+    });
+}
+
+if (exitCompactBtn) {
+    exitCompactBtn.addEventListener('click', () => {
+        closeCompactMode();
+    });
+}
+
+function openCompactMode() {
+    isCompactMode = true;
+    if (compactOverlay) compactOverlay.classList.remove('hidden');
+    renderCompactList();
+}
+
+function closeCompactMode() {
+    isCompactMode = false;
+    if (compactOverlay) compactOverlay.classList.add('hidden');
+    renderCompra();
+}
+
+function renderCompactList() {
+    const overlayBody = document.getElementById('compact-overlay-body');
+    if (!overlayBody) return;
+    overlayBody.innerHTML = '';
+
+    const needed = products.filter(p => p.currentStock < p.targetStock);
+
+    if (needed.length === 0) {
+        overlayBody.innerHTML = '<div class="empty-msg card" style="background:#222; color:#fff;">¡Todo abastecido! No necesitas comprar nada.</div>';
+        return;
     }
+
+    const grouped = needed.reduce((acc, p) => {
+        acc[p.category] = acc[p.category] || [];
+        acc[p.category].push(p);
+        return acc;
+    }, {});
+
+    Object.keys(grouped).forEach(cat => {
+        const sectionEl = document.createElement('div');
+        sectionEl.className = 'compact-section-table';
+
+        let rowsHtml = grouped[cat].map(p => {
+            const unit = p.unit || 'ud';
+            const qty = cartAdjustments[p.id] !== undefined ? cartAdjustments[p.id] : Math.round((p.targetStock - p.currentStock) * 100) / 100;
+            const isChecked = selectedCartIds.has(p.id) ? 'checked' : '';
+            const checkedClass = isChecked ? 'compact-row-checked' : '';
+
+            return `
+                <div class="compact-table-row ${checkedClass}" onclick="toggleCompactCheck('${p.id}')">
+                    <div class="compact-col-check">
+                        <input type="checkbox" class="compact-overlay-check" data-id="${p.id}" ${isChecked} onclick="event.stopPropagation(); handleCompactCheckClick('${p.id}', this)">
+                    </div>
+                    <div class="compact-col-name">${p.name}</div>
+                    <div class="compact-col-qty">${qty} ${unit}</div>
+                </div>
+            `;
+        }).join('');
+
+        sectionEl.innerHTML = `
+            <div class="compact-section-title">📂 Pasillo: ${cat}</div>
+            <div class="compact-table-container">
+                ${rowsHtml}
+            </div>
+        `;
+        overlayBody.appendChild(sectionEl);
+    });
 }
 
-async function enableSuperMode() {
-    isSuperMode = true;
-    const tabCompra = document.getElementById('tab-compra');
-    if (tabCompra) tabCompra.classList.add('super-mode');
-    const statusEl = document.getElementById('super-status');
-    if (statusEl) statusEl.textContent = 'ON';
-    await toggleWakeLock(true);
+function handleCompactCheckClick(id, checkbox) {
+    if (checkbox.checked) {
+        selectedCartIds.add(id);
+    } else {
+        selectedCartIds.delete(id);
+    }
+    if ('vibrate' in navigator) { try { navigator.vibrate(20); } catch(e){} }
+    renderCompactList();
 }
 
-async function disableSuperMode() {
-    isSuperMode = false;
-    const tabCompra = document.getElementById('tab-compra');
-    if (tabCompra) tabCompra.classList.remove('super-mode');
-    const statusEl = document.getElementById('super-status');
-    if (statusEl) statusEl.textContent = 'OFF';
-    await toggleWakeLock(false);
+function toggleCompactCheck(id) {
+    if (selectedCartIds.has(id)) {
+        selectedCartIds.delete(id);
+    } else {
+        selectedCartIds.add(id);
+    }
+    if ('vibrate' in navigator) { try { navigator.vibrate(20); } catch(e){} }
+    renderCompactList();
 }
 
-const toggleSuperBtn = document.getElementById('btn-toggle-super');
-if (toggleSuperBtn) {
-    toggleSuperBtn.addEventListener('click', () => {
-        if (isSuperMode) {
-            disableSuperMode();
-        } else {
-            enableSuperMode();
+/* ==========================================================================
+   COPIAR LISTA DE LA COMPRA AL PORTAPAPELES (v1.8.0)
+   ========================================================================== */
+const copyClipboardBtn = document.getElementById('btn-copy-clipboard');
+if (copyClipboardBtn) {
+    copyClipboardBtn.addEventListener('click', () => {
+        const needed = products.filter(p => p.currentStock < p.targetStock);
+        if (needed.length === 0) {
+            showToast('La lista de la compra está vacía', 'warning');
+            return;
         }
+
+        const grouped = needed.reduce((acc, p) => {
+            acc[p.category] = acc[p.category] || [];
+            acc[p.category].push(p);
+            return acc;
+        }, {});
+
+        let textToCopy = "🛒 LISTA DE LA COMPRA - MI DESPENSA\n\n";
+        Object.keys(grouped).forEach(cat => {
+            textToCopy += `[ ${cat.toUpperCase()} ]\n`;
+            grouped[cat].forEach(p => {
+                const qty = cartAdjustments[p.id] !== undefined ? cartAdjustments[p.id] : Math.round((p.targetStock - p.currentStock) * 100) / 100;
+                const unit = p.unit || 'ud';
+                const isMarked = selectedCartIds.has(p.id) ? '✓ ' : '• ';
+                textToCopy += `${isMarked}${p.name}: ${qty} ${unit}\n`;
+            });
+            textToCopy += "\n";
+        });
+
+        navigator.clipboard.writeText(textToCopy.trim()).then(() => {
+            showToast('Copiado al portapapeles', 'success');
+        }).catch(err => {
+            alert('No se pudo copiar al portapapeles.');
+        });
     });
 }
 
@@ -186,10 +377,12 @@ function openModal(productId = null) {
     const modalTitle = document.getElementById('modal-title');
     const inputId = document.getElementById('product-id');
     const inputName = document.getElementById('product-name');
-    const inputCat = document.getElementById('product-category');
+    const selectCat = document.getElementById('product-category');
     const selectUnit = document.getElementById('prod-unidad');
     const inputStock = document.getElementById('product-current-stock');
     const inputTarget = document.getElementById('product-target-stock');
+
+    updateCategorySelects();
 
     if (productId) {
         const prod = products.find(p => p.id === productId);
@@ -197,7 +390,7 @@ function openModal(productId = null) {
             if (modalTitle) modalTitle.textContent = 'Editar Producto';
             if (inputId) inputId.value = prod.id;
             if (inputName) inputName.value = prod.name;
-            if (inputCat) inputCat.value = prod.category;
+            if (selectCat) selectCat.value = prod.category;
             if (selectUnit) selectUnit.value = prod.unit || 'ud';
             if (inputStock) inputStock.value = prod.currentStock;
             if (inputTarget) inputTarget.value = prod.targetStock;
@@ -399,7 +592,7 @@ function deleteProduct(id) {
 }
 
 /* ==========================================================================
-   RENDERIZADO Y PERSISTENCIA DE SELECCIÓN EN CESTA (CON HÁPTICA v1.7.2)
+   RENDERIZADO Y PERSISTENCIA DE SELECCIÓN EN CESTA (CON HÁPTICA)
    ========================================================================== */
 function renderCompra() {
     const container = document.getElementById('contenedor-compra');
@@ -466,13 +659,8 @@ function handleCartCheck(checkbox) {
     } else {
         selectedCartIds.delete(id);
     }
-    // Feedback háptico suave si está disponible (v1.7.2)
     if ('vibrate' in navigator) {
-        try {
-            navigator.vibrate(20);
-        } catch (e) {
-            // Ignorar restricciones del navegador si no hay interacción previa o permiso
-        }
+        try { navigator.vibrate(20); } catch (e) {}
     }
 }
 
@@ -505,9 +693,7 @@ if (selectAllBtn) {
             chk.checked = true;
             selectedCartIds.add(chk.getAttribute('data-id'));
         });
-        if ('vibrate' in navigator) {
-            try { navigator.vibrate(20); } catch(e) {}
-        }
+        if ('vibrate' in navigator) { try { navigator.vibrate(20); } catch(e) {} }
     });
 }
 
@@ -517,9 +703,7 @@ if (deselectAllBtn) {
         const checkboxes = document.querySelectorAll('.purchase-check');
         checkboxes.forEach(chk => chk.checked = false);
         selectedCartIds.clear();
-        if ('vibrate' in navigator) {
-            try { navigator.vibrate(20); } catch(e) {}
-        }
+        if ('vibrate' in navigator) { try { navigator.vibrate(20); } catch(e) {} }
     });
 }
 
@@ -652,6 +836,7 @@ const searchProdInput = document.getElementById('search-productos');
 if (searchProdInput) searchProdInput.addEventListener('input', renderProductos);
 
 document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
     initNavigation();
     initFilters();
     updateCartBadge();

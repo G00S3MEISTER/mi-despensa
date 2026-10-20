@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VARIABLES Y CONFIGURACIÓN GLOBAL
+   VARIABLES Y CONFIGURACIÓN GLOBAL (MODO CLARO / OSCURO v1.8.0)
    ========================================================================== */
 :root {
     --bg-color: #f3f4f6;
@@ -18,6 +18,23 @@
     --warning-bg: #a16207;
     --nav-height: 60px;
     --font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body.dark-mode {
+    --bg-color: #111827;
+    --card-bg: #1f2937;
+    --primary-color: #f9fafb;
+    --secondary-bg: #374151;
+    --secondary-text: #f9fafb;
+    --text-color: #f9fafb;
+    --text-muted: #9ca3af;
+    --border-color: #374151;
+    --input-border: #4b5563;
+    --danger-bg: #7f1d1d;
+    --danger-color: #fecaca;
+    --success-bg: #14532d;
+    --info-bg: #1e40af;
+    --warning-bg: #78350f;
 }
 
 *, *::before, *::after {
@@ -50,7 +67,7 @@ input[type="number"] {
 /* ENCABEZADO SUPERIOR */
 .topbar {
     background: var(--primary-color);
-    color: #ffffff;
+    color: var(--card-bg);
     padding: 1rem 16px;
     display: flex;
     justify-content: space-between;
@@ -59,13 +76,13 @@ input[type="number"] {
 
 .topbar h1 {
     font-size: 1.35rem;
-    color: #ffffff;
+    color: var(--card-bg);
     margin: 0;
 }
 
 .topbar p {
     margin: 0.25rem 0 0;
-    color: #d1d5db;
+    color: var(--text-muted);
     font-size: 0.9rem;
 }
 
@@ -91,13 +108,18 @@ input[type="number"] {
     margin-bottom: 1rem;
 }
 
+.header-actions-inline {
+    display: flex;
+    gap: 0.5rem;
+}
+
 h2 {
     font-size: 1.2rem;
     color: var(--primary-color);
     margin: 0;
 }
 
-/* CHIPS DE FILTRADO CROMÁTICO EN INVENTARIO (v1.7.2) */
+/* CHIPS DE FILTRADO CROMÁTICO EN INVENTARIO */
 .filter-chips {
     display: flex;
     gap: 0.4rem;
@@ -123,7 +145,7 @@ h2 {
 
 .chip.active {
     background: var(--primary-color);
-    color: #ffffff;
+    color: var(--card-bg);
     border-color: var(--primary-color);
 }
 
@@ -169,7 +191,7 @@ h2 {
     margin-top: 1rem;
 }
 
-/* BOTÓN TOGGLE MODO SÚPER */
+/* BOTÓN MODO COMPACTO */
 .btn-super-toggle {
     background: #0284c7;
     color: #ffffff;
@@ -177,86 +199,153 @@ h2 {
     font-size: 0.85rem;
     border-radius: 8px;
     flex-shrink: 0;
-    min-height: 44px;
+    min-height: 40px;
 }
 
 /* ==========================================================================
-   MODO SÚPER AMOLED (v1.7.2 Estable)
+   NUEVO MODO LISTA COMPACTA (PANTALLA COMPLETA CUADERNO v1.8.0)
    ========================================================================== */
-#tab-compra.super-mode {
-    background-color: #000000 !important;
-    color: #ffffff !important;
-    padding: 12px;
+.compact-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: var(--card-bg);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.compact-overlay.hidden {
+    display: none;
+}
+
+.compact-overlay-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.75rem;
+}
+
+.compact-overlay-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.compact-section-table {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
+    overflow: hidden;
 }
 
-#tab-compra.super-mode .section-header h2,
-#tab-compra.super-mode .btn-super-toggle {
-    color: #ffffff !important;
+.compact-section-title {
+    background: var(--secondary-bg);
+    color: var(--primary-color);
+    font-weight: 800;
+    font-size: 0.95rem;
+    padding: 0.6rem 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-#tab-compra.super-mode .card,
-#tab-compra.super-mode .category-group {
-    background: #121212 !important;
-    border: 2px solid #333333 !important;
-    box-shadow: none !important;
+.compact-table-container {
+    display: flex;
+    flex-direction: column;
 }
 
-#tab-compra.super-mode .category-title {
-    background: #1f1f1f !important;
-    color: #00ffcc !important;
-    font-size: 1.4rem !important;
-    font-weight: 800 !important;
-    padding: 1rem !important;
-    letter-spacing: 1px;
+.compact-table-row {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    gap: 12px;
+    transition: background 0.1s;
 }
 
-#tab-compra.super-mode .shopping-item {
-    padding: 22px 16px !important;
-    min-height: 85px !important;
-    border-bottom: 1px solid #222222 !important;
+.compact-table-row:last-child {
+    border-bottom: none;
 }
 
-#tab-compra.super-mode .item-title {
-    color: #ffffff !important;
-    font-size: 1.5rem !important;
-    font-weight: 700 !important;
+.compact-table-row:active {
+    background: var(--secondary-bg);
 }
 
-#tab-compra.super-mode input[type="checkbox"],
-.checkbox-label input[type="checkbox"] {
-    width: 32px !important;
-    height: 32px !important;
-    cursor: pointer !important;
-    outline: none !important;
-    box-shadow: none !important;
-    border: 2px solid #ffffff !important;
-    background-color: #000000 !important;
+.compact-row-checked {
+    opacity: 0.45;
+    text-decoration: line-through;
 }
 
-#tab-compra.super-mode .btn-qty {
-    width: 48px !important;
-    height: 48px !important;
-    font-size: 1.5rem !important;
-    background-color: #222222 !important;
-    color: #ffffff !important;
-    border: 1px solid #444444 !important;
+.compact-col-check input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
 }
 
-#tab-compra.super-mode .cart-qty-input {
-    background: #1a1a1a !important;
-    color: #ffffff !important;
-    font-size: 1.4rem !important;
-    font-weight: bold !important;
-    width: 75px !important;
-    height: 48px !important;
-    border: 1px solid #444444 !important;
+.compact-col-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 1.05rem;
+    word-break: break-word;
 }
 
-#tab-compra.super-mode .unit-text {
-    color: #cccccc !important;
-    font-size: 1.2rem !important;
-    font-weight: bold !important;
+.compact-col-qty {
+    font-weight: 700;
+    font-size: 1rem;
+    background: var(--secondary-bg);
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+/* GESTIÓN DE PASILLOS EN AJUSTES */
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.categories-tags-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.category-tag-item {
+    background: var(--secondary-bg);
+    color: var(--primary-color);
+    padding: 0.35rem 0.65rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-del-cat {
+    background: transparent;
+    border: none;
+    color: var(--danger-color);
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0 2px;
+}
+
+.app-version-footer {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-top: 1.5rem;
+    font-weight: 600;
 }
 
 /* CONTROLES DE CANTIDAD AJUSTABLE EN CESTA */
@@ -421,7 +510,7 @@ input, select, textarea {
     padding: 0.65rem;
     border: 1px solid var(--input-border);
     border-radius: 8px;
-    background: #ffffff;
+    background: var(--card-bg);
     font: inherit;
     color: var(--text-color);
     margin-top: 0.3rem;
@@ -473,7 +562,7 @@ button, .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-import-label {
 
 .btn-primary {
     background: var(--primary-color);
-    color: #ffffff;
+    color: var(--card-bg);
 }
 
 .btn-secondary {
@@ -545,7 +634,7 @@ button, .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-import-label {
 
 .category-title {
     padding: 0.8rem 16px;
-    background: #f9fafb;
+    background: var(--secondary-bg);
     font-weight: 700;
     font-size: 0.95rem;
     color: var(--primary-color);
@@ -569,7 +658,7 @@ button, .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-import-label {
     left: 0;
     right: 0;
     height: var(--nav-height);
-    background: #ffffff;
+    background: var(--card-bg);
     border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: center;
@@ -641,7 +730,7 @@ button, .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-import-label {
 }
 
 .modal-box {
-    background: #ffffff;
+    background: var(--card-bg);
     border-radius: 14px;
     width: min(520px, 100%);
     max-height: 90vh;
@@ -733,10 +822,5 @@ button, .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-import-label {
 
     .topbar h1 {
         font-size: 1.15rem;
-    }
-
-    .btn-super-toggle {
-        padding: 0.35rem 0.6rem;
-        font-size: 0.75rem;
     }
 }

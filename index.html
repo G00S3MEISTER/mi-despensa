@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Control de Inventario Doméstico v1.7.2 (Estable)</title>
+    <title>Control de Inventario Doméstico v1.8.0</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4a90e2">
@@ -13,7 +13,7 @@
 <body>
 
     <!-- ENCABEZADO PRINCIPAL -->
-    <header class="topbar">
+    <header class="topbar app-header-item">
         <div>
             <h1>Despensa & Stock</h1>
             <p>Control de Inventario Doméstico</p>
@@ -52,9 +52,10 @@
         <section id="tab-compra" class="tab-content">
             <div class="section-header">
                 <h2>Lista de la Compra</h2>
-                <button id="btn-toggle-super" class="btn btn-super-toggle">
-                    Modo Súper: <span id="super-status">OFF</span>
-                </button>
+                <div class="header-actions-inline">
+                    <button id="btn-copy-clipboard" class="btn btn-secondary small" title="Copiar lista como texto">📋 Copiar</button>
+                    <button id="btn-toggle-compact" class="btn btn-super-toggle small">Modo Compacto 🖥️</button>
+                </div>
             </div>
 
             <div class="bulk-actions-bar">
@@ -90,6 +91,25 @@
             </div>
 
             <div class="card">
+                <h3>Apariencia</h3>
+                <div class="setting-row">
+                    <span>Modo Oscuro / Claro</span>
+                    <button id="btn-toggle-darkmode" class="btn btn-secondary small">Alternar Tema 🌓</button>
+                </div>
+            </div>
+
+            <!-- Gestión de Pasillos / Categorías (v1.8.0) -->
+            <div class="card">
+                <h3>Gestión de Pasillos / Categorías</h3>
+                <p class="product-meta">Añade o elimina los pasillos disponibles para tus productos.</p>
+                <div class="form-row" style="margin-top: 0.5rem;">
+                    <input type="text" id="new-category-input" placeholder="Nombre del pasillo (ej. Frutería)">
+                    <button id="btn-add-category" class="btn btn-primary">Añadir</button>
+                </div>
+                <div id="categories-list-container" class="categories-tags-grid" style="margin-top: 0.8rem;"></div>
+            </div>
+
+            <div class="card">
                 <h3>Estadísticas Globales</h3>
                 <div class="stats-grid">
                     <div class="stat-card">
@@ -122,12 +142,27 @@
                     </label>
                 </div>
             </div>
+
+            <div class="app-version-footer">
+                Versión de la app: v1.8.0
+            </div>
         </section>
 
     </main>
 
+    <!-- MODO LISTA COMPACTA A PANTALLA COMPLETA (v1.8.0) -->
+    <div id="compact-mode-overlay" class="compact-overlay hidden">
+        <div class="compact-overlay-header">
+            <h2>🛒 Lista Compacta (Supermercado)</h2>
+            <button id="btn-exit-compact" class="btn btn-danger small">Salir ✕</button>
+        </div>
+        <div id="compact-overlay-body" class="compact-overlay-body">
+            <!-- Contenido dinámico en tabla/cuaderno -->
+        </div>
+    </div>
+
     <!-- NAVEGACIÓN INFERIOR FIJA -->
-    <nav class="bottom-nav">
+    <nav class="bottom-nav app-header-item">
         <button class="nav-btn active" data-tab="inventario">
             <span class="icon">📋</span>
             <span>Inventario</span>
@@ -160,8 +195,10 @@
                 <label for="product-name">Nombre del producto *</label>
                 <input type="text" id="product-name" required placeholder="Ej. Leche entera, Arroz, Jamón">
 
-                <label for="product-category">Categoría</label>
-                <input type="text" id="product-category" placeholder="Ej. Lácteos, Legumbres, Charcutería">
+                <label for="product-category">Categoría / Pasillo *</label>
+                <select id="product-category" required>
+                    <!-- Dinámico -->
+                </select>
 
                 <label for="prod-unidad">Unidad de medida</label>
                 <select id="prod-unidad">
