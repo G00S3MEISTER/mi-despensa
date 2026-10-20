@@ -4,7 +4,7 @@ Aplicación Web Progresiva (PWA) ligera, rápida y moderna construida en **Vanil
 
 ---
 
-## 🚀 Novedades de la Versión v1.8.4
+## 🚀 Novedades de la Versión v1.8.5
 
 * **Eliminación Definitiva del Botón "Nuevo" en Inventario:** Se ha limpiado por completo la esquina superior de la pestaña de inventario, unificando la gestión de creación de productos en la barra superior contextual y conservando únicamente el selector de vista.
 * **Lógica de Filtros por Umbral Acumulativo:** Actualización del comportamiento de los chips de stock en inventario para funcionar como umbrales acumulativos hacia abajo:
@@ -13,7 +13,7 @@ Aplicación Web Progresiva (PWA) ligera, rápida y moderna construida en **Vanil
   * **`🟡 <50%`**: Muestra productos en reserva, críticos y agotados.
   * **`🟢 >50%`**: Muestra productos en estado saludable.
   * **`⚪ Todos`**: Restablece y muestra todo el inventario.
-* **Service Worker v1.8.4:** Caché actualizada para garantizar la sincronización inmediata de la interfaz y las nuevas funciones de filtrado.
+* **Service Worker v1.8.5:** Caché actualizada para garantizar la sincronización inmediata de la interfaz y las nuevas funciones de filtrado.
 
 ---
 
@@ -33,8 +33,8 @@ Aplicación Web Progresiva (PWA) ligera, rápida y moderna construida en **Vanil
 | Versión | Descripción y Cambios Principales |
 | :--- | :--- |
 | **v1.0 - v1.7.2** | Inventario base, semáforo visual de stock, persistencia en cesta, PWA offline y feedback háptico. |
-| **v1.8.0 - v1.8.3** | Pasillos personalizables, Modo Lista Compacta, Modo Oscuro/Claro manual, orden alfabético en pasillos y limpieza rápida en buscadores. |
-| **v1.8.4** | **Optimización UI/UX y Filtros Acumulativos:** Eliminación definitiva del botón "Nuevo" en inventario y nuevo filtrado por umbral acumulativo de stock. |
+| **v1.8.0 - v1.8.4** | Pasillos personalizables, Modo Lista Compacta, Modo Oscuro/Claro manual, orden alfabético en pasillos y limpieza rápida en buscadores. |
+| **v1.8.5** | **Optimización UI/UX y Filtros Acumulativos:** Eliminación definitiva del botón "Nuevo" en inventario y nuevo filtrado por umbral acumulativo de stock. |
 
 ---
 

@@ -1,10 +1,10 @@
 /* ==========================================================================
-   REGISTRO DEL SERVICE WORKER (v1.8.4)
+   REGISTRO DEL SERVICE WORKER (v1.8.5)
    ========================================================================== */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker registrado correctamente (v1.8.4):', reg.scope))
+      .then(reg => console.log('Service Worker registrado correctamente (v1.8.5):', reg.scope))
       .catch(err => console.error('Error al registrar Service Worker:', err));
   });
 }
@@ -109,7 +109,7 @@ function updateCartBadge() {
 }
 
 /* ==========================================================================
-   CONTROL DE PESTAÑAS Y TOPBAR CONTEXTUAL (v1.8.4)
+   CONTROL DE PESTAÑAS Y TOPBAR CONTEXTUAL (v1.8.5)
    ========================================================================== */
 function updateTopbarContext(tabName) {
     const titleEl = document.getElementById('topbar-title');
@@ -121,7 +121,7 @@ function updateTopbarContext(tabName) {
     if (tabName === 'inventario') {
         titleEl.textContent = '📋 Inventario';
         
-        // Botón Cambiar Vista y Botón + Nuevo integrados en la franja superior azul
+        // Únicamente el botón de cambio de vista en la franja superior de Inventario (v1.8.5)
         const viewBtn = document.createElement('button');
         viewBtn.className = 'btn btn-secondary small';
         viewBtn.innerHTML = `🔀 <span id="view-mode-label">${inventoryViewMode === 'categories' ? 'Categorías' : 'Alfabética'}</span>`;
@@ -275,7 +275,7 @@ function deleteCategory(catName) {
 }
 
 /* ==========================================================================
-   FILTROS CROMÁTICOS POR UMBRAL ACUMULATIVO (v1.8.4)
+   FILTROS CROMÁTICOS POR UMBRAL ACUMULATIVO
    ========================================================================== */
 function initFilters() {
     const chips = document.querySelectorAll('.filter-chips .chip');
@@ -337,24 +337,19 @@ function renderInventario() {
         normalizeText(p.name).includes(query) || normalizeText(p.category).includes(query)
     );
 
-    // Lógica de Filtros por Umbral Acumulativo (v1.8.4)
     if (activeFilter === 'red') {
-        // 0%: Solo agotados
         filtered = filtered.filter(p => p.currentStock === 0);
     } else if (activeFilter === 'orange') {
-        // <25%: Agotados + crítico (ratio <= 0.25)
         filtered = filtered.filter(p => {
             if (p.currentStock === 0) return true;
             return (p.currentStock / p.targetStock) <= 0.25;
         });
     } else if (activeFilter === 'yellow') {
-        // <50%: Agotados + crítico + reserva (ratio <= 0.50)
         filtered = filtered.filter(p => {
             if (p.currentStock === 0) return true;
             return (p.currentStock / p.targetStock) <= 0.50;
         });
     } else if (activeFilter === 'green') {
-        // >50%: Saludable (ratio > 0.50)
         filtered = filtered.filter(p => {
             if (p.currentStock === 0) return false;
             return (p.currentStock / p.targetStock) > 0.50;
