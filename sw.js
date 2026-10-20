@@ -1,4 +1,4 @@
-const CACHE_NAME = 'despensa-pwa-v1.6.0';
+const CACHE_NAME = 'despensa-pwa-v1.7.1';
 const ASSETS_TO_CACHE = [
   './index.html',
   './styles.css',
@@ -18,7 +18,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activación: Limpieza de cachés antiguas
+// Activación: Limpieza de cachés antiguas (v1.7.1)
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -43,15 +43,13 @@ self.addEventListener('fetch', (event) => {
       }
       return fetch(event.request).then((networkResponse) => {
         return caches.open(CACHE_NAME).then((cache) => {
-          // Opcional: cachear dinámicamente nuevas solicitudes de recursos
           if (event.request.method === 'GET' && event.request.url.startsWith(self.location.origin)) {
             cache.put(event.request, networkResponse.clone());
           }
           return networkResponse;
         });
       }).catch(() => {
-        // Fallback genérico offline si fuera necesario (ej. para páginas HTML)
-        if (event.request.headers.get('accept').includes('text/html')) {
+        if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
           return caches.match('./index.html');
         }
       });

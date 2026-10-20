@@ -1,5 +1,5 @@
 /* ==========================================================================
-   REGISTRO DEL SERVICE WORKER (v1.6.0)
+   REGISTRO DEL SERVICE WORKER (v1.7.1)
    ========================================================================== */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -13,8 +13,9 @@ if ('serviceWorker' in navigator) {
    ESTADO Y BASE DE DATOS LOCAL
    ========================================================================== */
 let products = JSON.parse(localStorage.getItem('inventory_products')) || [];
-let activeFilter = 'all';
-let cartAdjustments = {};
+let activeFilter = 'all'; // 'all', 'red', 'orange', 'yellow', 'green'
+let cartAdjustments = {}; 
+let selectedCartIds = new Set(); // Persistencia de selección en cesta
 let wakeLock = null;
 let isSuperMode = false;
 
@@ -29,6 +30,15 @@ const getStepForUnit = (unit) => {
     return 1;
 };
 
+// Semáforo de Inventario v1.7.1 con umbrales estrictos
+const getStockSemaphore = (current, target) => {
+    if (current === 0) return { color: '🔴', label: 'Sin Stock' };
+    const ratio = current / target;
+    if (ratio <= 0.25) return { color: '🟠', label: 'Crítico' };
+    if (ratio <= 0.50) return { color: '🟡', label: 'En Reserva' };
+    return { color: '🟢', label: 'Saludable' };
+};
+
 function saveState() {
     localStorage.setItem('inventory_products', JSON.stringify(products));
     updateStats();
@@ -40,6 +50,7 @@ function saveState() {
    ========================================================================== */
 function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
+    if (!container) return;
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.textContent = message;
@@ -61,6 +72,7 @@ function showToast(message, type = 'info') {
    ========================================================================== */
 function updateCartBadge() {
     const badge = document.getElementById('badge-compra');
+    if (!badge) return;
     const neededCount = products.filter(p => p.currentStock < p.targetStock).length;
 
     if (neededCount > 0) {
@@ -101,7 +113,7 @@ function initNavigation() {
 }
 
 /* ==========================================================================
-   FILTROS RÁPIDOS POR ESTADO
+   FILTROS CROMÁTICOS DE INVENTARIO
    ========================================================================== */
 function initFilters() {
     const chips = document.querySelectorAll('.filter-chips .chip');
@@ -116,7 +128,7 @@ function initFilters() {
 }
 
 /* ==========================================================================
-   GESTIÓN DE MODO SÚPER (RESTRINGIDO A LA CESTA)
+   GESTIÓN DE MODO SÚPER
    ========================================================================== */
 async function toggleWakeLock(enable) {
     if ('wakeLock' in navigator && enable) {
@@ -137,25 +149,32 @@ async function toggleWakeLock(enable) {
 
 async function enableSuperMode() {
     isSuperMode = true;
-    document.getElementById('tab-compra').classList.add('super-mode');
-    document.getElementById('super-status').textContent = 'ON';
+    const tabCompra = document.getElementById('tab-compra');
+    if (tabCompra) tabCompra.classList.add('super-mode');
+    const statusEl = document.getElementById('super-status');
+    if (statusEl) statusEl.textContent = 'ON';
     await toggleWakeLock(true);
 }
 
 async function disableSuperMode() {
     isSuperMode = false;
-    document.getElementById('tab-compra').classList.remove('super-mode');
-    document.getElementById('super-status').textContent = 'OFF';
+    const tabCompra = document.getElementById('tab-compra');
+    if (tabCompra) tabCompra.classList.remove('super-mode');
+    const statusEl = document.getElementById('super-status');
+    if (statusEl) statusEl.textContent = 'OFF';
     await toggleWakeLock(false);
 }
 
-document.getElementById('btn-toggle-super').addEventListener('click', () => {
-    if (isSuperMode) {
-        disableSuperMode();
-    } else {
-        enableSuperMode();
-    }
-});
+const toggleSuperBtn = document.getElementById('btn-toggle-super');
+if (toggleSuperBtn) {
+    toggleSuperBtn.addEventListener('click', () => {
+        if (isSuperMode) {
+            disableSuperMode();
+        } else {
+            enableSuperMode();
+        }
+    });
+}
 
 /* ==========================================================================
    GESTIÓN DE MODAL (CREACIÓN / EDICIÓN)
@@ -175,90 +194,110 @@ function openModal(productId = null) {
     if (productId) {
         const prod = products.find(p => p.id === productId);
         if (prod) {
-            modalTitle.textContent = 'Editar Producto';
-            inputId.value = prod.id;
-            inputName.value = prod.name;
-            inputCat.value = prod.category;
-            selectUnit.value = prod.unit || 'ud';
-            inputStock.value = prod.currentStock;
-            inputTarget.value = prod.targetStock;
+            if (modalTitle) modalTitle.textContent = 'Editar Producto';
+            if (inputId) inputId.value = prod.id;
+            if (inputName) inputName.value = prod.name;
+            if (inputCat) inputCat.value = prod.category;
+            if (selectUnit) selectUnit.value = prod.unit || 'ud';
+            if (inputStock) inputStock.value = prod.currentStock;
+            if (inputTarget) inputTarget.value = prod.targetStock;
         }
     } else {
-        modalTitle.textContent = 'Añadir Producto';
-        productForm.reset();
-        selectUnit.value = 'ud';
-        inputId.value = '';
+        if (modalTitle) modalTitle.textContent = 'Añadir Producto';
+        if (productForm) productForm.reset();
+        if (selectUnit) selectUnit.value = 'ud';
+        if (inputId) inputId.value = '';
     }
 
-    modal.classList.remove('hidden');
+    if (modal) modal.classList.remove('hidden');
 }
 
 function closeModal() {
-    modal.classList.add('hidden');
-    productForm.reset();
+    if (modal) modal.classList.add('hidden');
+    if (productForm) productForm.reset();
 }
 
-productForm.addEventListener('submit', (e) => {
-    e.preventDefault();
+if (productForm) {
+    productForm.addEventListener('submit', (e) => {
+        e.preventDefault();
 
-    const id = document.getElementById('product-id').value;
-    const name = document.getElementById('product-name').value.trim();
-    const category = document.getElementById('product-category').value.trim() || 'Otros';
-    const unit = document.getElementById('prod-unidad').value || 'ud';
-    const currentStock = parseFloat(document.getElementById('product-current-stock').value) || 0;
-    const targetStock = parseFloat(document.getElementById('product-target-stock').value) || 1;
+        const id = document.getElementById('product-id').value;
+        const name = document.getElementById('product-name').value.trim();
+        const category = document.getElementById('product-category').value.trim() || 'Otros';
+        const unit = document.getElementById('prod-unidad').value || 'ud';
+        const currentStock = parseFloat(document.getElementById('product-current-stock').value) || 0;
+        const targetStock = parseFloat(document.getElementById('product-target-stock').value) || 1;
 
-    if (id) {
-        const prod = products.find(p => p.id === id);
-        if (prod) {
-            prod.name = name;
-            prod.category = category;
-            prod.unit = unit;
-            prod.currentStock = currentStock;
-            prod.targetStock = targetStock;
-            showToast(`Producto "${name}" actualizado`, 'success');
+        if (id) {
+            const prod = products.find(p => p.id === id);
+            if (prod) {
+                prod.name = name;
+                prod.category = category;
+                prod.unit = unit;
+                prod.currentStock = currentStock;
+                prod.targetStock = targetStock;
+                showToast(`Producto "${name}" actualizado`, 'success');
+            }
+        } else {
+            const newProduct = {
+                id: Date.now().toString(),
+                name,
+                category,
+                unit,
+                currentStock,
+                targetStock
+            };
+            products.push(newProduct);
+            showToast(`Producto "${name}" creado`, 'success');
         }
-    } else {
-        const newProduct = {
-            id: Date.now().toString(),
-            name,
-            category,
-            unit,
-            currentStock,
-            targetStock
-        };
-        products.push(newProduct);
-        showToast(`Producto "${name}" creado`, 'success');
-    }
 
-    saveState();
-    closeModal();
+        saveState();
+        closeModal();
 
-    const activeTab = document.querySelector('.nav-btn.active').getAttribute('data-tab');
-    if (activeTab === 'inventario') renderInventario();
-    if (activeTab === 'productos') renderProductos();
-});
+        const activeTabBtn = document.querySelector('.nav-btn.active');
+        const activeTab = activeTabBtn ? activeTabBtn.getAttribute('data-tab') : 'inventario';
+        if (activeTab === 'inventario') renderInventario();
+        if (activeTab === 'productos') renderProductos();
+    });
+}
 
 /* ==========================================================================
-   RENDERIZADO Y BÚSQUEDA EN INVENTARIO
+   RENDERIZADO Y FILTRADO CROMÁTICO EN INVENTARIO (v1.7.1)
    ========================================================================== */
 function renderInventario() {
     const list = document.getElementById('lista-inventario');
-    const query = normalizeText(document.getElementById('search-inventario').value);
+    const searchInput = document.getElementById('search-inventario');
+    if (!list) return;
+    const query = normalizeText(searchInput ? searchInput.value : '');
     list.innerHTML = '';
 
     let filtered = products.filter(p => 
         normalizeText(p.name).includes(query) || normalizeText(p.category).includes(query)
     );
 
-    if (activeFilter === 'out') {
+    // Filtrado por color de alerta
+    if (activeFilter === 'red') {
         filtered = filtered.filter(p => p.currentStock === 0);
-    } else if (activeFilter === 'low') {
-        filtered = filtered.filter(p => p.currentStock < p.targetStock);
+    } else if (activeFilter === 'orange') {
+        filtered = filtered.filter(p => {
+            if (p.currentStock === 0) return false;
+            return (p.currentStock / p.targetStock) <= 0.25;
+        });
+    } else if (activeFilter === 'yellow') {
+        filtered = filtered.filter(p => {
+            if (p.currentStock === 0) return false;
+            const r = p.currentStock / p.targetStock;
+            return r > 0.25 && r <= 0.50;
+        });
+    } else if (activeFilter === 'green') {
+        filtered = filtered.filter(p => {
+            if (p.currentStock === 0) return false;
+            return (p.currentStock / p.targetStock) > 0.50;
+        });
     }
 
     if (filtered.length === 0) {
-        list.innerHTML = '<li class="empty-msg card">No hay productos que coincidan con el filtro.</li>';
+        list.innerHTML = '<li class="empty-msg card">No hay productos que coincidan con el filtro seleccionado.</li>';
         return;
     }
 
@@ -266,12 +305,13 @@ function renderInventario() {
         const unit = p.unit || 'ud';
         const step = getStepForUnit(unit);
         const isMinDisabled = p.currentStock <= 0 ? 'disabled' : '';
+        const semaphore = getStockSemaphore(p.currentStock, p.targetStock);
 
         const li = document.createElement('li');
         li.className = 'card item-row';
         li.innerHTML = `
             <div class="item-info">
-                <strong class="item-title">${p.name}</strong>
+                <strong class="item-title"><span class="stock-semaphore" title="${semaphore.label}">${semaphore.color}</span> ${p.name}</strong>
                 <div class="product-meta">${p.category} | Objetivo: ${p.targetStock} ${unit}</div>
             </div>
             <div class="stock-controls">
@@ -301,7 +341,9 @@ function changeStock(id, delta) {
    ========================================================================== */
 function renderProductos() {
     const container = document.getElementById('contenedor-productos');
-    const query = normalizeText(document.getElementById('search-productos').value);
+    const searchInput = document.getElementById('search-productos');
+    if (!container) return;
+    const query = normalizeText(searchInput ? searchInput.value : '');
     container.innerHTML = '';
 
     const filtered = products.filter(p => 
@@ -358,10 +400,11 @@ function deleteProduct(id) {
 }
 
 /* ==========================================================================
-   RENDERIZADO Y DECREMENTO EN CESTA
+   RENDERIZADO Y PERSISTENCIA DE SELECCIÓN EN CESTA
    ========================================================================== */
 function renderCompra() {
     const container = document.getElementById('contenedor-compra');
+    if (!container) return;
     container.innerHTML = '';
 
     const needed = products.filter(p => p.currentStock < p.targetStock);
@@ -391,11 +434,12 @@ function renderCompra() {
             }
 
             const currentBuyVal = cartAdjustments[p.id];
+            const isChecked = selectedCartIds.has(p.id) ? 'checked' : '';
 
             return `
                 <div class="item-row inner-row shopping-item">
                     <label class="checkbox-label">
-                        <input type="checkbox" class="purchase-check" data-id="${p.id}">
+                        <input type="checkbox" class="purchase-check" data-id="${p.id}" ${isChecked} onchange="handleCartCheck(this)">
                         <span class="item-title">${p.name}</span>
                     </label>
                     <div class="cart-qty-adjuster">
@@ -414,6 +458,15 @@ function renderCompra() {
         `;
         container.appendChild(groupEl);
     });
+}
+
+function handleCartCheck(checkbox) {
+    const id = checkbox.getAttribute('data-id');
+    if (checkbox.checked) {
+        selectedCartIds.add(id);
+    } else {
+        selectedCartIds.delete(id);
+    }
 }
 
 function adjustCartQty(id, delta) {
@@ -437,57 +490,75 @@ function updateCartInput(id, val) {
     renderCompra();
 }
 
-document.getElementById('btn-select-all').addEventListener('click', () => {
-    const checkboxes = document.querySelectorAll('.purchase-check');
-    checkboxes.forEach(chk => chk.checked = true);
-});
-
-document.getElementById('btn-deselect-all').addEventListener('click', () => {
-    const checkboxes = document.querySelectorAll('.purchase-check');
-    checkboxes.forEach(chk => chk.checked = false);
-});
-
-document.getElementById('btn-finish-purchase').addEventListener('click', () => {
-    const checked = document.querySelectorAll('.purchase-check:checked');
-    if (checked.length === 0) {
-        alert('Marca al menos un elemento comprado.');
-        return;
-    }
-
-    checked.forEach(chk => {
-        const id = chk.getAttribute('data-id');
-        const prod = products.find(p => p.id === id);
-        if (prod) {
-            const addedQty = cartAdjustments[id] !== undefined ? cartAdjustments[id] : (prod.targetStock - prod.currentStock);
-            prod.currentStock = Math.round((prod.currentStock + addedQty) * 100) / 100;
-            delete cartAdjustments[id];
-        }
+const selectAllBtn = document.getElementById('btn-select-all');
+if (selectAllBtn) {
+    selectAllBtn.addEventListener('click', () => {
+        const checkboxes = document.querySelectorAll('.purchase-check');
+        checkboxes.forEach(chk => {
+            chk.checked = true;
+            selectedCartIds.add(chk.getAttribute('data-id'));
+        });
     });
+}
 
-    saveState();
-    renderCompra();
-    showToast('Stock reponido con éxito', 'success');
-});
+const deselectAllBtn = document.getElementById('btn-deselect-all');
+if (deselectAllBtn) {
+    deselectAllBtn.addEventListener('click', () => {
+        const checkboxes = document.querySelectorAll('.purchase-check');
+        checkboxes.forEach(chk => chk.checked = false);
+        selectedCartIds.clear();
+    });
+}
+
+const finishPurchaseBtn = document.getElementById('btn-finish-purchase');
+if (finishPurchaseBtn) {
+    finishPurchaseBtn.addEventListener('click', () => {
+        const checked = document.querySelectorAll('.purchase-check:checked');
+        if (checked.length === 0) {
+            alert('Marca al menos un elemento comprado.');
+            return;
+        }
+
+        checked.forEach(chk => {
+            const id = chk.getAttribute('data-id');
+            const prod = products.find(p => p.id === id);
+            if (prod) {
+                const addedQty = cartAdjustments[id] !== undefined ? cartAdjustments[id] : (prod.targetStock - prod.currentStock);
+                prod.currentStock = Math.round((prod.currentStock + addedQty) * 100) / 100;
+                delete cartAdjustments[id];
+                selectedCartIds.delete(id);
+            }
+        });
+
+        saveState();
+        renderCompra();
+        showToast('stock repuesto con éxito', 'success');
+    });
+}
 
 /* ==========================================================================
    ESTADÍSTICAS AVANZADAS
    ========================================================================== */
 function updateStats() {
     const totalProd = products.length;
-    document.getElementById('stat-total-prod').textContent = totalProd;
+    const totalProdEl = document.getElementById('stat-total-prod');
+    if (totalProdEl) totalProdEl.textContent = totalProd;
 
     const lowStockCount = products.filter(p => p.currentStock < p.targetStock).length;
-    document.getElementById('stat-low-stock').textContent = lowStockCount;
+    const lowStockEl = document.getElementById('stat-low-stock');
+    if (lowStockEl) lowStockEl.textContent = lowStockCount;
 
+    const coverageEl = document.getElementById('stat-coverage');
     if (totalProd > 0) {
         const sumCurrent = products.reduce((acc, p) => acc + p.currentStock, 0);
         const sumTarget = products.reduce((acc, p) => acc + p.targetStock, 0);
         const coverage = sumTarget > 0 ? Math.min(100, Math.round((sumCurrent / sumTarget) * 100)) : 0;
-        document.getElementById('stat-coverage').textContent = `${coverage}%`;
+        if (coverageEl) coverageEl.textContent = `${coverage}%`;
     } else {
-        document.getElementById('stat-coverage').textContent = '0%';
+        if (coverageEl) coverageEl.textContent = '0%';
     }
 
+    const topCatEl = document.getElementById('stat-top-cat');
     if (totalProd > 0) {
         const catCounts = products.reduce((acc, p) => {
             acc[p.category] = (acc[p.category] || 0) + 1;
@@ -495,65 +566,77 @@ function updateStats() {
         }, {});
 
         const topCat = Object.keys(catCounts).reduce((a, b) => catCounts[a] > catCounts[b] ? a : b);
-        document.getElementById('stat-top-cat').textContent = topCat;
+        if (topCatEl) topCatEl.textContent = topCat;
     } else {
-        document.getElementById('stat-top-cat').textContent = '-';
+        if (topCatEl) topCatEl.textContent = '-';
     }
 }
 
 /* ==========================================================================
-   RESPALDOS CON TIMESTAMP ISO Y EVENTOS DE CARGA
+   RESPALDOS Y EVENTOS DE CARGA
    ========================================================================== */
-document.getElementById('btn-export-backup').addEventListener('click', () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
+const exportBackupBtn = document.getElementById('btn-export-backup');
+if (exportBackupBtn) {
+    exportBackupBtn.addEventListener('click', () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
 
-    const fileName = `despensa_backup_${year}-${month}-${day}_${hours}${minutes}.json`;
+        const fileName = `despensa_backup_${year}-${month}-${day}_${hours}${minutes}.json`;
 
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(products, null, 2));
-    const dlAnchor = document.createElement('a');
-    dlAnchor.setAttribute("href", dataStr);
-    dlAnchor.setAttribute("download", fileName);
-    document.body.appendChild(dlAnchor);
-    dlAnchor.click();
-    dlAnchor.remove();
-    showToast('Copia exportada correctamente', 'info');
-});
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(products, null, 2));
+        const dlAnchor = document.createElement('a');
+        dlAnchor.setAttribute("href", dataStr);
+        dlAnchor.setAttribute("download", fileName);
+        document.body.appendChild(dlAnchor);
+        dlAnchor.click();
+        dlAnchor.remove();
+        showToast('Copia exportada correctamente', 'info');
+    });
+}
 
-document.getElementById('file-import-backup').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+const importBackupFile = document.getElementById('file-import-backup');
+if (importBackupFile) {
+    importBackupFile.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        try {
-            const imported = JSON.parse(event.target.result);
-            if (Array.isArray(imported)) {
-                products = imported;
-                saveState();
-                renderInventario();
-                showToast('Datos importados con éxito', 'success');
-            } else {
-                throw new Error('Formato no válido');
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const imported = JSON.parse(event.target.result);
+                if (Array.isArray(imported)) {
+                    products = imported;
+                    saveState();
+                    renderInventario();
+                    showToast('Datos importados con éxito', 'success');
+                } else {
+                    throw new Error('Formato no válido');
+                }
+            } catch (err) {
+                alert('Error al importar archivo. Asegúrate de que sea un JSON válido.');
             }
-        } catch (err) {
-            alert('Error al importar archivo. Asegúrate de que sea un JSON válido.');
-        }
-    };
-    reader.readAsText(file);
-});
+        };
+        reader.readAsText(file);
+    });
+}
 
-document.getElementById('btn-open-modal-inv').addEventListener('click', () => openModal());
-document.getElementById('btn-open-modal-prod').addEventListener('click', () => openModal());
-document.getElementById('btn-close-modal').addEventListener('click', closeModal);
-document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
+const openModalInvBtn = document.getElementById('btn-open-modal-inv');
+if (openModalInvBtn) openModalInvBtn.addEventListener('click', () => openModal());
+const openModalProdBtn = document.getElementById('btn-open-modal-prod');
+if (openModalProdBtn) openModalProdBtn.addEventListener('click', () => openModal());
+const closeModalBtn = document.getElementById('btn-close-modal');
+if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+const cancelModalBtn = document.getElementById('btn-cancel-modal');
+if (cancelModalBtn) cancelModalBtn.addEventListener('click', closeModal);
 
-document.getElementById('search-inventario').addEventListener('input', renderInventario);
-document.getElementById('search-productos').addEventListener('input', renderProductos);
+const searchInvInput = document.getElementById('search-inventario');
+if (searchInvInput) searchInvInput.addEventListener('input', renderInventario);
+const searchProdInput = document.getElementById('search-productos');
+if (searchProdInput) searchProdInput.addEventListener('input', renderProductos);
 
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();

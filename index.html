@@ -2,15 +2,10 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- Metadatos PWA y prevención de zoom involuntario -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Control de Inventario Doméstico v1.6.0</title>
+    <title>Control de Inventario Doméstico v1.7.1</title>
     <link rel="stylesheet" href="styles.css">
-    
-    <!-- Vinculación del Manifiesto PWA -->
     <link rel="manifest" href="manifest.json">
-    
-    <!-- Tema y configuración para Android e iOS -->
     <meta name="theme-color" content="#4a90e2">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -41,16 +36,19 @@
                 <input type="text" id="search-inventario" placeholder="Buscar por nombre o categoría...">
             </div>
 
+            <!-- Nuevos filtros cromáticos sincronizados (v1.7.1) -->
             <div class="filter-chips">
                 <button class="chip active" data-filter="all">Todos</button>
-                <button class="chip chip-agotado" data-filter="out">Agotados</button>
-                <button class="chip chip-minimos" data-filter="low">Bajo Mínimos</button>
+                <button class="chip chip-red" data-filter="red">🔴 Sin Stock</button>
+                <button class="chip chip-orange" data-filter="orange">🟠 Crítico (≤25%)</button>
+                <button class="chip chip-yellow" data-filter="yellow">🟡 En Reserva (≤50%)</button>
+                <button class="chip chip-green" data-filter="green">🟢 Saludable (>50%)</button>
             </div>
 
             <ul id="lista-inventario" class="item-list"></ul>
         </section>
 
-        <!-- PESTAÑA 2: CESTA DE LA COMPRA (Incluye el Modo Súper v1.5.2+) -->
+        <!-- PESTAÑA 2: CESTA DE LA COMPRA -->
         <section id="tab-compra" class="tab-content">
             <div class="section-header">
                 <h2>Lista de la Compra</h2>
