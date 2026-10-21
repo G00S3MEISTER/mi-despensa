@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecetaForge IA - Mi Despensa v2.0</title>
+    <style>
+        :root {
+            --bg: #111827;
+            --card: #1f2937;
+            --text: #f9fafb;
+            --accent: #2563eb;
+            --border: #374151;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 { font-size: 1.5rem; margin-bottom: 1rem; color: #60a5fa; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        input, textarea, button { width: 100%; padding: 10px; margin-top: 8px; border-radius: 8px; border: 1px solid var(--border); background: #111827; color: #fff; font-family: inherit; box-sizing: border-box; }
+        button { background: var(--accent); font-weight: bold; cursor: pointer; border: none; margin-top: 12px; }
+        button:hover { opacity: 0.9; }
+        pre { background: #000; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; color: #34d399; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    </style>
+</head>
+<body>
+
+    <h1>🛠️ RecetaForge IA (v2.0 Estable)</h1>
+
+    <div class="card">
+        <h3>1. Importar desde TheMealDB API</h3>
+        <div class="grid">
+            <input type="text" id="mealdb-id" placeholder="Nombre o ID de plato (ej: Arrabiata)">
+            <button id="btn-fetch-mealdb">Buscar en TheMealDB</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>2. Generar con Gemini IA (gemini-2.5-flash)</h3>
+        <input type="password" id="gemini-key" placeholder="API Key de Google Gemini">
+        <textarea id="gemini-prompt" rows="3" placeholder="Ej: Receta tradicional de Paella Valenciana para 4 personas"></textarea>
+        <button id="btn-generate-gemini">Generar JSON con Gemini IA</button>
+    </div>
+
+    <div class="card">
+        <h3>3. Salida JSON Estandarizada v2.0</h3>
+        <pre id="json-output">// El resultado estandarizado aparecerá aquí...</pre>
+        <button id="btn-copy-json">📋 Copiar JSON al Portapapeles</button>
+    </div>
+
+    <script>
+        document.getElementById('btn-fetch-mealdb').onclick = async () => {
+            const query = document.getElementById('mealdb-id').value.trim();
+            if (!query) return alert('Introduce un nombre de receta');
+            try {
+                const res = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                if (!data.meals) return alert('No se encontraron recetas');
+                
+                const meal = data.meals[0];
+                const recetaFormat = {
+                    id: 'receta_' + Date.now(),
+                    nombre: meal.strMeal,
+                    categoria: meal.strCategory || 'General',
+                    tiempo_preparacion_min: 30,
+                    raciones: 4,
+                    ingredientes: [],
+                    pasos: meal.strInstructions.split('\r\n').filter(p => p.trim())
+                };
+
+                for (let i = 1; i <= 20; i++) {
+                    const ing = meal[`strIngredient${i}`];
+                    const qty = meal[`strMeasure${i}`];
+                    if (ing && ing.trim()) {
+                        recetaFormat.ingredientes.push({ nombre: ing.trim(), cantidad: qty ? qty.trim() : '1 ud' });
+                    }
+                }
+
+                document.getElementById('json-output').textContent = JSON.stringify(recetaFormat, null, 2);
+            } catch (err) {
+                alert('Error al consultar TheMealDB API');
+            }
+        };
+
+        document.getElementById('btn-generate-gemini').onclick = async () => {
+            const apiKey = document.getElementById('gemini-key').value.trim();
+            const promptText = document.getElementById('gemini-prompt').value.trim();
+            if (!apiKey || !promptText) return alert('Introduce la API Key de Gemini y la descripción');
+
+            const systemPrompt = `Devuelve ÚNICAMENTE un objeto JSON válido con este formato exacto:
+            {
+              "id": "receta_timestamp",
+              "nombre": "Nombre",
+              "categoria": "Categoría",
+              "tiempo_preparacion_min": 30,
+              "raciones": 4,
+              "ingredientes": [{"nombre": "Ingrediente", "cantidad": "200 g"}],
+              "pasos": ["Paso 1", "Paso 2"]
+            }`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `${systemPrompt}\n\nReceta solicitada: ${promptText}` }] }]
+                    })
+                });
+
+                const data = await response.json();
+                const rawText = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
+                const parsed = JSON.parse(rawText);
+                parsed.id = 'receta_' + Date.now();
+                document.getElementById('json-output').textContent = JSON.stringify(parsed, null, 2);
+            } catch (e) {
+                alert('Error al generar receta con Gemini IA');
+            }
+        };
+
+        document.getElementById('btn-copy-json').onclick = () => {
+            const text = document.getElementById('json-output').textContent;
+            navigator.clipboard.writeText(text).then(() => alert('JSON copiado con éxito'));
+        };
+    </script>
+</body>
+</html>

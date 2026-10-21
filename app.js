@@ -1,10 +1,10 @@
 /* ==========================================================================
-   REGISTRO DEL SERVICE WORKER (v1.9.2)
+   REGISTRO DEL SERVICE WORKER (v2.0 Estable)
    ========================================================================== */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker registrado correctamente (v1.9.2):', reg.scope))
+      .then(reg => console.log('Service Worker registrado correctamente (v2.0 Estable):', reg.scope))
       .catch(err => console.error('Error al registrar Service Worker:', err));
   });
 }
@@ -145,7 +145,7 @@ function updateCartBadge() {
 }
 
 /* ==========================================================================
-   CONTROL DE PESTAÑAS Y TOPBAR CONTEXTUAL (v1.9.2)
+   CONTROL DE PESTAÑAS Y TOPBAR CONTEXTUAL (v2.0 Estable)
    ========================================================================== */
 function updateTopbarContext(tabName) {
     const titleEl = document.getElementById('topbar-title');
@@ -716,7 +716,7 @@ if (finishPurchaseBtn) {
 }
 
 /* ==========================================================================
-   MODO LISTA COMPACTA - PÍLDORA HORIZONTAL 3 EN 1 (v1.9.2)
+   MODO LISTA COMPACTA - PÍLDORA HORIZONTAL 3 EN 1 (v2.0 Estable)
    ========================================================================== */
 const compactOverlay = document.getElementById('compact-mode-overlay');
 const exitCompactBtn = document.getElementById('btn-exit-compact');
@@ -864,13 +864,13 @@ function copyShoppingListToClipboard() {
 }
 
 /* ==========================================================================
-   EXPORTACIÓN INTELIGENTE CON FECHA Y VERSIÓN (v1.9.2)
+   EXPORTACIÓN INTELIGENTE CON FECHA Y VERSIÓN (v2.0 Estable)
    ========================================================================== */
 const exportBackupBtn = document.getElementById('btn-export-backup');
 if (exportBackupBtn) {
     exportBackupBtn.addEventListener('click', () => {
         const backupData = {
-            version: "v1.9.2",
+            version: "v2.0 Estable",
             exportDate: new Date().toISOString(),
             products,
             categories,
