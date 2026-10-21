@@ -1,10 +1,10 @@
 /* ==========================================================================
-   REGISTRO DEL SERVICE WORKER (v1.9.1)
+   REGISTRO DEL SERVICE WORKER (v1.9.2)
    ========================================================================== */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker registrado correctamente (v1.9.1):', reg.scope))
+      .then(reg => console.log('Service Worker registrado correctamente (v1.9.2):', reg.scope))
       .catch(err => console.error('Error al registrar Service Worker:', err));
   });
 }
@@ -145,7 +145,7 @@ function updateCartBadge() {
 }
 
 /* ==========================================================================
-   CONTROL DE PESTAÑAS Y TOPBAR CONTEXTUAL (v1.9.1)
+   CONTROL DE PESTAÑAS Y TOPBAR CONTEXTUAL (v1.9.2)
    ========================================================================== */
 function updateTopbarContext(tabName) {
     const titleEl = document.getElementById('topbar-title');
@@ -716,7 +716,7 @@ if (finishPurchaseBtn) {
 }
 
 /* ==========================================================================
-   MODO LISTA COMPACTA - PÍLDORA HORIZONTAL INTEGRADA 3 EN 1 (v1.9.2)
+   MODO LISTA COMPACTA - PÍLDORA HORIZONTAL 3 EN 1 (v1.9.2)
    ========================================================================== */
 const compactOverlay = document.getElementById('compact-mode-overlay');
 const exitCompactBtn = document.getElementById('btn-exit-compact');
@@ -824,7 +824,7 @@ function adjustCompactQty(id, delta) {
     const newVal = Math.round(Math.max(0, currentVal + delta) * 100) / 100;
     
     cartAdjustments[id] = newVal;
-    if ('vibrate' in navigator) { try { navigator.vibrate(15); } catch(e){} }
+    if ('vibrate' in navigator) { try { navigator.vibrate(20); } catch(e){} }
     renderCompactList();
 }
 
@@ -864,13 +864,13 @@ function copyShoppingListToClipboard() {
 }
 
 /* ==========================================================================
-   EXPORTACIÓN INTELIGENTE CON FECHA Y VERSIÓN (v1.9.1)
+   EXPORTACIÓN INTELIGENTE CON FECHA Y VERSIÓN (v1.9.2)
    ========================================================================== */
 const exportBackupBtn = document.getElementById('btn-export-backup');
 if (exportBackupBtn) {
     exportBackupBtn.addEventListener('click', () => {
         const backupData = {
-            version: "v1.9.1",
+            version: "v1.9.2",
             exportDate: new Date().toISOString(),
             products,
             categories,
