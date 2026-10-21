@@ -1,8 +1,6 @@
 /* ==========================================================================
    MÓDULO DE PLANIFICADOR SEMANAL (Estructura base para v2.0 Alfa)
    ========================================================================== */
-import { getState, saveDB } from './db.js';
-
 export function renderPlanner() {
     const container = document.getElementById('contenedor-planificador');
     if (!container) return;
