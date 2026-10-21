@@ -241,7 +241,7 @@ h2 {
 }
 
 /* ==========================================================================
-   MODO LISTA COMPACTA - STEPPER ULTRA-COMPACTO (v1.9.1)
+   MODO LISTA COMPACTA - PÍLDORA HORIZONTAL 3 EN 1 (v1.9.2)
    ========================================================================== */
 .compact-overlay {
     position: fixed;
@@ -330,47 +330,45 @@ h2 {
     min-width: 0;
 }
 
-.compact-controls-group {
-    display: flex;
+.compact-col-qty-pill {
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-}
-
-.compact-qty-pill {
     background: var(--secondary-bg);
-    color: var(--primary-color);
-    font-weight: 700;
-    font-size: 0.85rem;
-    padding: 4px 8px;
-    border-radius: 6px;
-    white-space: nowrap;
-    text-align: center;
-    min-width: 46px;
-}
-
-.compact-stepper-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.btn-compact-step {
-    background: var(--card-bg);
-    color: var(--primary-color);
     border: 1px solid var(--border-color);
-    width: 26px;
-    height: 18px;
-    font-size: 0.7rem;
+    border-radius: 20px;
+    overflow: hidden;
+    flex-shrink: 0;
+    height: 34px;
+}
+
+.btn-pill-step {
+    background: transparent;
+    color: var(--primary-color);
+    border: none;
+    width: 32px;
+    height: 100%;
+    font-size: 0.95rem;
     font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    border-radius: 4px;
-    padding: 0;
-    line-height: 1;
     user-select: none;
+    transition: background 0.15s ease;
+}
+
+.btn-pill-step:active {
+    background: var(--border-color);
+}
+
+.pill-value {
+    padding: 0 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    min-width: 48px;
+    text-align: center;
+    white-space: nowrap;
 }
 
 .btn-compact-step:active {
