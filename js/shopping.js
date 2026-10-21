@@ -3,7 +3,7 @@
    ========================================================================== */
 import { getState, saveDB } from './db.js';
 import { getStepForUnit } from './inventory.js';
-import { showToast, initTheme } from './app.js';
+import { showToast, initTheme, updateCartBadge } from './app.js';
 
 let cartAdjustments = {};
 let selectedCartIds = new Set();
@@ -153,15 +153,13 @@ export function initCartGlobalButtons() {
 
             selectedCartIds.clear();
             saveDB();
+            updateCartBadge();
             renderCompra();
             showToast('Stock repuesto con éxito', 'success');
         };
     }
 }
 
-/* ==========================================================================
-   MODO SUPERMERCADO COMPACTO CON PÍLDORA HORIZONTAL 3 EN 1
-   ========================================================================== */
 export function openCompactMode() {
     const compactOverlay = document.getElementById('compact-mode-overlay');
     if (compactOverlay) compactOverlay.classList.remove('hidden');
