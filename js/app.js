@@ -2,7 +2,7 @@
    ORQUESTADOR PRINCIPAL ES6 Y NAVEGACIÓN GLOBAL (v2.0 Alfa)
    ========================================================================== */
 import { initDB, getState, saveDB, exportBackup, importBackup } from './db.js';
-import { renderInventario, renderProductos, normalizeText } from './inventory.js';
+import { renderInventario, renderProductos } from './inventory.js';
 import { renderCompra, initCartGlobalButtons, openCompactMode, closeCompactMode, copyShoppingListToClipboard } from './shopping.js';
 import { renderRecetas } from './recipes.js';
 import { renderPlanner } from './planner.js';
@@ -16,7 +16,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-/* UI UTILS: TOASTS Y MODALES */
 export function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -159,13 +158,13 @@ function initNavigation() {
             if (targetTab === 'ajustes') {
                 updateStats();
                 renderCategoriesManager();
+                loadApiKeyInput();
             }
         };
     });
     updateTopbarContext('inventario');
 }
 
-/* GESTIÓN DE MODAL DE PRODUCTO */
 const modal = document.getElementById('product-modal');
 const productForm = document.getElementById('product-form');
 
@@ -309,7 +308,13 @@ function updateStats() {
     }
 }
 
-/* INICIALIZACIÓN GLOBAL */
+function loadApiKeyInput() {
+    const input = document.getElementById('input-gemini-key');
+    if (input) {
+        input.value = localStorage.getItem('gemini_api_key') || '';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initDB();
     initTheme();
@@ -318,11 +323,9 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCartBadge();
     renderInventario();
 
-    // Eventos de búsqueda con botón de limpieza
     setupSearch('search-inventario', 'clear-search-inventario', renderInventario);
     setupSearch('search-productos', 'clear-search-productos', renderProductos);
 
-    // Filtros de inventario
     const chips = document.querySelectorAll('.filter-chips .chip');
     const state = getState();
     chips.forEach(chip => {
@@ -338,7 +341,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
-    // Dark Mode Toggle
     const darkToggle = document.getElementById('btn-toggle-darkmode');
     if (darkToggle) {
         darkToggle.onclick = () => {
@@ -349,7 +351,19 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Modal de creación / edición
+    // Guardar API Key de Gemini en localStorage
+    const saveKeyBtn = document.getElementById('btn-save-gemini-key');
+    if (saveKeyBtn) {
+        saveKeyBtn.onclick = () => {
+            const input = document.getElementById('input-gemini-key');
+            if (input) {
+                const keyVal = input.value.trim();
+                localStorage.setItem('gemini_api_key', keyVal);
+                showToast('API Key de Gemini guardada correctamente', 'success');
+            }
+        };
+    }
+
     if (productForm) {
         productForm.onsubmit = (e) => {
             e.preventDefault();
@@ -406,7 +420,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Copia de seguridad
     const exportBtn = document.getElementById('btn-export-backup');
     if (exportBtn) exportBtn.onclick = exportBackup;
 
@@ -421,6 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const parsed = JSON.parse(event.target.result);
                     if (importBackup(parsed)) {
                         initTheme();
+                        updateCartBadge();
                         renderInventario();
                         showToast('Copia restaurada con éxito', 'success');
                     } else showToast('Archivo JSON no válido.', 'warning');
