@@ -1,10 +1,10 @@
 /* ==========================================================================
-   REGISTRO DEL SERVICE WORKER (v1.8.5)
+   REGISTRO DEL SERVICE WORKER (v1.9.1)
    ========================================================================== */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker registrado correctamente (v1.8.5):', reg.scope))
+      .then(reg => console.log('Service Worker registrado correctamente (v1.9.1):', reg.scope))
       .catch(err => console.error('Error al registrar Service Worker:', err));
   });
 }
@@ -22,6 +22,7 @@ let inventoryViewMode = localStorage.getItem('inventory_view_mode') || 'categori
 let activeFilter = localStorage.getItem('inventory_active_filter') || 'all'; 
 let cartAdjustments = {}; 
 let selectedCartIds = new Set(); 
+let collapsedCategories = JSON.parse(localStorage.getItem('inventory_collapsed_cats')) || {};
 
 const normalizeText = (text) => 
     text ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim() : "";
@@ -48,6 +49,7 @@ function saveState() {
     localStorage.setItem('inventory_darkmode', JSON.stringify(darkMode));
     localStorage.setItem('inventory_view_mode', inventoryViewMode);
     localStorage.setItem('inventory_active_filter', activeFilter);
+    localStorage.setItem('inventory_collapsed_cats', JSON.stringify(collapsedCategories));
     updateStats();
     updateCartBadge();
 }
@@ -74,7 +76,7 @@ if (toggleDarkModeBtn) {
 }
 
 /* ==========================================================================
-   SISTEMA DE NOTIFICACIONES TOAST
+   NOTIFICACIONES TOAST Y MODAL DE CONFIRMACIÓN
    ========================================================================== */
 function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
@@ -95,6 +97,40 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
+function showCustomConfirm(title, message, onConfirm) {
+    const modal = document.getElementById('custom-confirm-modal');
+    const titleEl = document.getElementById('confirm-modal-title');
+    const msgEl = document.getElementById('confirm-modal-msg');
+    const okBtn = document.getElementById('btn-confirm-ok');
+    const cancelBtn = document.getElementById('btn-confirm-cancel');
+    if (!modal) {
+        if (confirm(message)) onConfirm();
+        return;
+    }
+
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.textContent = message;
+    modal.classList.remove('hidden');
+
+    const handleOk = () => {
+        cleanup();
+        onConfirm();
+    };
+
+    const handleCancel = () => {
+        cleanup();
+    };
+
+    const cleanup = () => {
+        modal.classList.add('hidden');
+        okBtn.removeEventListener('click', handleOk);
+        cancelBtn.removeEventListener('click', handleCancel);
+    };
+
+    okBtn.addEventListener('click', handleOk);
+    cancelBtn.addEventListener('click', handleCancel);
+}
+
 function updateCartBadge() {
     const badge = document.getElementById('badge-compra');
     if (!badge) return;
@@ -109,7 +145,7 @@ function updateCartBadge() {
 }
 
 /* ==========================================================================
-   CONTROL DE PESTAÑAS Y TOPBAR CONTEXTUAL (v1.8.5)
+   CONTROL DE PESTAÑAS Y TOPBAR CONTEXTUAL (v1.9.1)
    ========================================================================== */
 function updateTopbarContext(tabName) {
     const titleEl = document.getElementById('topbar-title');
@@ -121,7 +157,6 @@ function updateTopbarContext(tabName) {
     if (tabName === 'inventario') {
         titleEl.textContent = '📋 Inventario';
         
-        // Únicamente el botón de cambio de vista en la franja superior de Inventario (v1.8.5)
         const viewBtn = document.createElement('button');
         viewBtn.className = 'btn btn-secondary small';
         viewBtn.innerHTML = `🔀 <span id="view-mode-label">${inventoryViewMode === 'categories' ? 'Categorías' : 'Alfabética'}</span>`;
@@ -189,14 +224,20 @@ function initNavigation() {
 }
 
 /* ==========================================================================
-   REASIGNACIÓN Y ORDEN ALFABÉTICO EN SELECTORES DE PASILLOS
+   ORDEN ALFABÉTICO ESTRICTO DE CATEGORÍAS Y PRODUCTOS
    ========================================================================== */
 function renderCategoriesManager() {
     const container = document.getElementById('categories-list-container');
     if (!container) return;
     container.innerHTML = '';
 
-    categories.forEach(cat => {
+    const sortedCategories = [...categories].sort((a, b) => {
+        if (a === 'Otros') return 1;
+        if (b === 'Otros') return -1;
+        return a.localeCompare(b);
+    });
+
+    sortedCategories.forEach(cat => {
         const tag = document.createElement('div');
         tag.className = 'category-tag-item';
         tag.innerHTML = `
@@ -241,7 +282,7 @@ if (addCatBtn) {
         const val = input.value.trim();
         if (!val) return;
         if (categories.includes(val)) {
-            alert('Este pasillo ya existe.');
+            showToast('Este pasillo ya existe.', 'warning');
             return;
         }
         categories.push(val);
@@ -254,28 +295,32 @@ if (addCatBtn) {
 
 function deleteCategory(catName) {
     if (categories.length <= 1) {
-        alert('Debe existir al menos un pasillo.');
+        showToast('Debe existir al menos un pasillo.', 'warning');
         return;
     }
-    if (confirm(`¿Eliminar pasillo "${catName}"? Los productos asignados pasarán automáticamente a "Otros".`)) {
-        categories = categories.filter(c => c !== catName);
-        if (!categories.includes('Otros')) categories.push('Otros');
-        
-        products.forEach(p => {
-            if (p.category === catName) {
-                p.category = 'Otros';
-            }
-        });
+    showCustomConfirm(
+        'Eliminar Pasillo',
+        `¿Eliminar pasillo "${catName}"? Los productos asignados pasarán automáticamente a "Otros".`,
+        () => {
+            categories = categories.filter(c => c !== catName);
+            if (!categories.includes('Otros')) categories.push('Otros');
+            
+            products.forEach(p => {
+                if (p.category === catName) {
+                    p.category = 'Otros';
+                }
+            });
 
-        saveState();
-        renderCategoriesManager();
-        renderInventario();
-        showToast('Pasillo eliminado y productos reasignados a Otros', 'warning');
-    }
+            saveState();
+            renderCategoriesManager();
+            renderInventario();
+            showToast('Pasillo eliminado y productos reasignados a Otros', 'warning');
+        }
+    );
 }
 
 /* ==========================================================================
-   FILTROS CROMÁTICOS POR UMBRAL ACUMULATIVO
+   FILTROS Y BÚSQUEDA
    ========================================================================== */
 function initFilters() {
     const chips = document.querySelectorAll('.filter-chips .chip');
@@ -448,7 +493,7 @@ function changeStock(id, delta) {
 }
 
 /* ==========================================================================
-   RENDERIZADO DE PRODUCTOS EN CATÁLOGO
+   RENDERIZADO DE PRODUCTOS EN CATÁLOGO CON ACORDEÓN TÉCTIL
    ========================================================================== */
 function renderProductos() {
     const container = document.getElementById('contenedor-productos');
@@ -472,7 +517,13 @@ function renderProductos() {
         return acc;
     }, {});
 
-    Object.keys(grouped).forEach(cat => {
+    Object.keys(grouped).sort().forEach(cat => {
+        grouped[cat].sort((a, b) => a.name.localeCompare(b.name));
+
+        const isCollapsed = !!collapsedCategories[cat];
+        const arrowSymbol = isCollapsed ? '▼' : '▲';
+        const collapsedClass = isCollapsed ? 'collapsed' : '';
+
         const groupEl = document.createElement('div');
         groupEl.className = 'category-group card';
 
@@ -493,21 +544,34 @@ function renderProductos() {
         }).join('');
 
         groupEl.innerHTML = `
-            <div class="category-title">${cat}</div>
-            <div class="category-items">${itemsHtml}</div>
+            <div class="category-header-accordion" onclick="toggleCategoryAccordion('${cat}')">
+                <span>📂 ${cat} (${grouped[cat].length})</span>
+                <span class="accordion-arrow">${arrowSymbol}</span>
+            </div>
+            <div class="category-items ${collapsedClass}">${itemsHtml}</div>
         `;
         container.appendChild(groupEl);
     });
 }
 
+function toggleCategoryAccordion(catName) {
+    collapsedCategories[catName] = !collapsedCategories[catName];
+    saveState();
+    renderProductos();
+}
+
 function deleteProduct(id) {
     const prod = products.find(p => p.id === id);
-    if (confirm(`¿Estás seguro de eliminar "${prod ? prod.name : 'este producto'}"?`)) {
-        products = products.filter(p => p.id !== id);
-        saveState();
-        renderProductos();
-        showToast('Producto eliminado', 'warning');
-    }
+    showCustomConfirm(
+        'Eliminar Producto',
+        `¿Estás seguro de eliminar "${prod ? prod.name : 'este producto'}"?`,
+        () => {
+            products = products.filter(p => p.id !== id);
+            saveState();
+            renderProductos();
+            showToast('Producto eliminado', 'warning');
+        }
+    );
 }
 
 /* ==========================================================================
@@ -531,7 +595,8 @@ function renderCompra() {
         return acc;
     }, {});
 
-    Object.keys(grouped).forEach(cat => {
+    Object.keys(grouped).sort().forEach(cat => {
+        grouped[cat].sort((a, b) => a.name.localeCompare(b.name));
         const groupEl = document.createElement('div');
         groupEl.className = 'category-group card';
 
@@ -629,7 +694,7 @@ if (finishPurchaseBtn) {
     finishPurchaseBtn.addEventListener('click', () => {
         const checked = document.querySelectorAll('.purchase-check:checked');
         if (checked.length === 0) {
-            alert('Marca al menos un elemento comprado.');
+            showToast('Marca al menos un elemento comprado.', 'warning');
             return;
         }
 
@@ -646,12 +711,12 @@ if (finishPurchaseBtn) {
 
         saveState();
         renderCompra();
-        showToast('stock repuesto con éxito', 'success');
+        showToast('Stock repuesto con éxito', 'success');
     });
 }
 
 /* ==========================================================================
-   MODO LISTA COMPACTA (PANTALLA COMPLETA)
+   MODO LISTA COMPACTA CON STEPPER ULTRA-COMPACTO (v1.9.1)
    ========================================================================== */
 const compactOverlay = document.getElementById('compact-mode-overlay');
 const exitCompactBtn = document.getElementById('btn-exit-compact');
@@ -664,11 +729,15 @@ if (exitCompactBtn) {
 
 function openCompactMode() {
     if (compactOverlay) compactOverlay.classList.remove('hidden');
+    // Forzar modo oscuro de alta visibilidad para pasillos de supermercado
+    document.body.classList.add('dark-mode');
     renderCompactList();
 }
 
 function closeCompactMode() {
     if (compactOverlay) compactOverlay.classList.add('hidden');
+    // Restaurar tema original del usuario
+    initTheme();
     renderCompra();
 }
 
@@ -690,12 +759,14 @@ function renderCompactList() {
         return acc;
     }, {});
 
-    Object.keys(grouped).forEach(cat => {
+    Object.keys(grouped).sort().forEach(cat => {
+        grouped[cat].sort((a, b) => a.name.localeCompare(b.name));
         const sectionEl = document.createElement('div');
         sectionEl.className = 'compact-section-table';
 
         let rowsHtml = grouped[cat].map(p => {
             const unit = p.unit || 'ud';
+            const step = getStepForUnit(unit);
             const qty = cartAdjustments[p.id] !== undefined ? cartAdjustments[p.id] : Math.round((p.targetStock - p.currentStock) * 100) / 100;
             const isChecked = selectedCartIds.has(p.id) ? 'checked' : '';
             const checkedClass = isChecked ? 'compact-row-checked' : '';
@@ -706,7 +777,13 @@ function renderCompactList() {
                         <input type="checkbox" class="compact-overlay-check" data-id="${p.id}" ${isChecked} onclick="event.stopPropagation(); handleCompactCheckClick('${p.id}', this)">
                     </div>
                     <div class="compact-col-name">${p.name}</div>
-                    <div class="compact-col-qty">${qty} ${unit}</div>
+                    <div class="compact-controls-group" onclick="event.stopPropagation()">
+                        <span class="compact-qty-pill">${qty} ${unit}</span>
+                        <div class="compact-stepper-stack">
+                            <button class="btn-compact-step" onclick="adjustCompactQty('${p.id}', ${step})" title="Incrementar">+</button>
+                            <button class="btn-compact-step" onclick="adjustCompactQty('${p.id}', -${step})" title="Reducir">-</button>
+                        </div>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -741,6 +818,18 @@ function toggleCompactCheck(id) {
     renderCompactList();
 }
 
+function adjustCompactQty(id, delta) {
+    const prod = products.find(p => p.id === id);
+    if (!prod) return;
+
+    const currentVal = cartAdjustments[id] !== undefined ? cartAdjustments[id] : (prod.targetStock - prod.currentStock);
+    const newVal = Math.round(Math.max(0, currentVal + delta) * 100) / 100;
+    
+    cartAdjustments[id] = newVal;
+    if ('vibrate' in navigator) { try { navigator.vibrate(15); } catch(e){} }
+    renderCompactList();
+}
+
 /* ==========================================================================
    COPIAR LISTA AL PORTAPAPELES
    ========================================================================== */
@@ -758,7 +847,7 @@ function copyShoppingListToClipboard() {
     }, {});
 
     let textToCopy = "🛒 LISTA DE LA COMPRA - MI DESPENSA\n\n";
-    Object.keys(grouped).forEach(cat => {
+    Object.keys(grouped).sort().forEach(cat => {
         textToCopy += `[ ${cat.toUpperCase()} ]\n`;
         grouped[cat].forEach(p => {
             const qty = cartAdjustments[p.id] !== undefined ? cartAdjustments[p.id] : Math.round((p.targetStock - p.currentStock) * 100) / 100;
@@ -772,7 +861,75 @@ function copyShoppingListToClipboard() {
     navigator.clipboard.writeText(textToCopy.trim()).then(() => {
         showToast('Copiado al portapapeles', 'success');
     }).catch(err => {
-        alert('No se pudo copiar al portapapeles.');
+        showToast('No se pudo copiar al portapapeles.', 'warning');
+    });
+}
+
+/* ==========================================================================
+   EXPORTACIÓN INTELIGENTE CON FECHA Y VERSIÓN (v1.9.1)
+   ========================================================================== */
+const exportBackupBtn = document.getElementById('btn-export-backup');
+if (exportBackupBtn) {
+    exportBackupBtn.addEventListener('click', () => {
+        const backupData = {
+            version: "v1.9.1",
+            exportDate: new Date().toISOString(),
+            products,
+            categories,
+            darkMode,
+            inventoryViewMode
+        };
+
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+        
+        // Formato: despensa_backup_v1.9_YYYY-MM-DD.json
+        const todayStr = new Date().toISOString().split('T')[0];
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `despensa_backup_v1.9_${todayStr}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+
+        showToast('Copia de seguridad exportada con éxito', 'success');
+    });
+}
+
+const importBackupInput = document.getElementById('file-import-backup');
+if (importBackupInput) {
+    importBackupInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const imported = JSON.parse(event.target.result);
+                if (imported.products && Array.isArray(imported.products)) {
+                    products = imported.products;
+                    if (imported.categories && Array.isArray(imported.categories)) {
+                        categories = imported.categories;
+                    }
+                    if (typeof imported.darkMode === 'boolean') {
+                        darkMode = imported.darkMode;
+                    }
+                    if (imported.inventoryViewMode) {
+                        inventoryViewMode = imported.inventoryViewMode;
+                    }
+
+                    saveState();
+                    initTheme();
+                    renderInventario();
+                    showToast('Copia restaurada con éxito', 'success');
+                } else {
+                    showToast('El archivo no es válido.', 'warning');
+                }
+            } catch (err) {
+                showToast('Error al leer el archivo JSON.', 'warning');
+            }
+            importBackupInput.value = '';
+        };
+        reader.readAsText(file);
     });
 }
 

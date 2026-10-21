@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Control de Inventario Doméstico v1.8.4</title>
+    <title>Control de Inventario Doméstico v1.9.1</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4a90e2">
+    <meta name="theme-color" content="#111827">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 
-    <!-- ENCABEZADO SUPERIOR CONTEXTUAL (v1.8.4) -->
+    <!-- ENCABEZADO SUPERIOR CONTEXTUAL (v1.9.1) -->
     <header class="topbar">
         <div id="topbar-title" class="topbar-title">📋 Mi Inventario</div>
         <div id="topbar-actions" class="topbar-actions">
@@ -32,7 +32,7 @@
                 <button type="button" id="clear-search-inventario" class="clear-search-btn hidden" title="Limpiar búsqueda">✕</button>
             </div>
 
-            <!-- Chips de filtrado horizontal compacto y simétrico con umbrales acumulativos -->
+            <!-- Chips de filtrado horizontal compactos (1 sola línea garantizada) -->
             <div class="filter-chips-scroll">
                 <div class="filter-chips">
                     <button class="chip active" data-filter="all">⚪ Todos</button>
@@ -121,7 +121,7 @@
 
             <div class="card">
                 <h3>Copia de Seguridad</h3>
-                <p class="product-meta">Exporta tus datos en formato JSON o restaura un respaldo previo.</p>
+                <p class="product-meta">Exporta tus datos con fecha y versión o restaura un respaldo previo.</p>
                 <div class="backup-actions-vertical">
                     <button id="btn-export-backup" class="btn btn-primary full">Exportar Copia (.json)</button>
                     <label for="file-import-backup" class="btn btn-secondary full btn-import-label">
@@ -132,13 +132,13 @@
             </div>
 
             <div class="app-version-footer">
-                Versión de la app: v1.8.4
+                Versión de la app: v1.9.1 (Release Final)
             </div>
         </section>
 
     </main>
 
-    <!-- MODO LISTA COMPACTA A PANTALLA COMPLETA -->
+    <!-- MODO LISTA COMPACTA A PANTALLA COMPLETA (v1.9.1: Stepper Ultra-Compacto) -->
     <div id="compact-mode-overlay" class="compact-overlay hidden">
         <div class="compact-overlay-header">
             <h2>🛒 Lista Compacta (Supermercado)</h2>
@@ -209,6 +209,18 @@
                     <button type="submit" class="btn btn-primary">Guardar</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN PERSONALIZADO -->
+    <div id="custom-confirm-modal" class="modal hidden">
+        <div class="modal-box" style="max-width: 380px; text-align: center;">
+            <h3 id="confirm-modal-title" style="margin-bottom: 0.75rem;">Confirmación</h3>
+            <p id="confirm-modal-msg" style="margin-bottom: 1.25rem; font-size: 0.95rem; color: var(--text-muted);"></p>
+            <div class="modal-actions" style="justify-content: center;">
+                <button id="btn-confirm-cancel" class="btn btn-secondary">Cancelar</button>
+                <button id="btn-confirm-ok" class="btn btn-danger">Aceptar</button>
+            </div>
         </div>
     </div>
 

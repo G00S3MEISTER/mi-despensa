@@ -1,4 +1,4 @@
-const CACHE_NAME = 'despensa-pwa-v1.8.5';
+const CACHE_NAME = 'despensa-pwa-v1.9.1';
 const ASSETS_TO_CACHE = [
   './index.html',
   './styles.css',

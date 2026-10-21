@@ -1,26 +1,34 @@
-# 📦 Control de Inventario Doméstico (PWA)
+# 📦 Control de Inventario Doméstico (PWA) - v1.9.1 (Release Final)
 
-Aplicación Web Progresiva (PWA) ligera, rápida y moderna construida en **Vanilla JavaScript**, **HTML5** y **CSS3**. Permite un control preciso sobre el stock del hogar, lista de la compra automatizada y gestión de datos con persistencia local.
+Aplicación Web Progresiva (PWA) ligera, rápida y moderna construida en **Vanilla JavaScript**, **HTML5** y **CSS3**. Diseñada para ofrecer un control absoluto del stock del hogar, lista de la compra automatizada, soporte offline mediante Service Workers y máxima usabilidad móvil.
 
 ---
 
-## 🚀 Novedades de la Versión v1.8.5
+## 🚀 Novedades y Mejoras de la Versión v1.9.1
 
-* **Eliminación Definitiva del Botón "Nuevo" en Inventario:** Se ha limpiado por completo la esquina superior de la pestaña de inventario, unificando la gestión de creación de productos en la barra superior contextual y conservando únicamente el selector de vista.
-* **Lógica de Filtros por Umbral Acumulativo:** Actualización del comportamiento de los chips de stock en inventario para funcionar como umbrales acumulativos hacia abajo:
-  * **`🔴 0%`**: Muestra exclusivamente los productos agotados.
-  * **`🟠 <25%`**: Muestra productos críticos e incluye los agotados.
-  * **`🟡 <50%`**: Muestra productos en reserva, críticos y agotados.
-  * **`🟢 >50%`**: Muestra productos en estado saludable.
-  * **`⚪ Todos`**: Restablece y muestra todo el inventario.
-* **Service Worker v1.8.5:** Caché actualizada para garantizar la sincronización inmediata de la interfaz y las nuevas funciones de filtrado.
+1. **Stepper Ultra-Compacto en Modo Supermercado (`styles.css` / `app.js`):**
+   * Eliminación de los inputs numéricos anchos dentro del overlay de lista compacta.
+   * Sustitución por un bloque ultracompacto a la derecha formado por una **píldora visual de cantidad** (`1 ud`) y un **mini-stepper vertical** con botones `+` / `-` en columna estrecha.
+   * Maximiza el espacio horizontal para que los nombres largos de los productos se visualicen sin saltos de línea.
+2. **Chips de Filtro de Inventario Compactos (`styles.css`):**
+   * Optimización absoluta para garantizar que los 5 botones de umbral (`⚪ Todos`, `🔴 0%`, `🟠 <25%`, `🟡 <50%`, `🟢 >50%`) quepan en una **única línea horizontal** en pantallas móviles estrechas.
+3. **Modo Oscuro Forzado en Modo Compacto (`app.js`):**
+   * Al abrir el overlay del Modo Supermercado, se activa automáticamente la clase `dark-mode` para proporcionar un alto contraste bajo la iluminación de los pasillos, restaurando la preferencia original al cerrar.
+4. **Orden Alfabético Estricto y Acordeones en Catálogo:**
+   * Sincronización de la ordenación alfabética estricta (A-Z) en pasillos y productos de todas las pestañas, junto con acordeones táctiles desplegables (`▼ / ▲`) en las tarjetas de pasillo de la pestaña *Productos*.
+5. **Sustitución Total de Alertas Nativas y Háptica:**
+   * Diálogos nativos `alert`/`confirm` reemplazados por Toasts y modales personalizados internos de la PWA.
+   * Retroalimentación háptica corta (`navigator.vibrate`) integrada en el supermercado y marcado de cesta.
+6. **Respaldo Inteligente y Service Worker v1.9.1:**
+   * Exportación JSON con formato automático: `despensa_backup_v1.9_YYYY-MM-DD.json`.
+   * Caché del Service Worker actualizada a `despensa-pwa-v1.9.1`.
 
 ---
 
 ## 📱 Guía Rápida de Despliegue e Instalación
 
 ### Despliegue en la Web (GitHub Pages / Netlify)
-1. Sube todos los archivos del proyecto a un repositorio público o plataforma estática compatible con **HTTPS**.
+1. Sube todos los archivos del proyecto a un repositorio público o servidor estático con soporte **HTTPS**.
 
 ### Instalación en la Pantalla de Inicio del Móvil
 * **Android (Chrome / Edge):** Menú ➔ "Instalar aplicación".
@@ -33,8 +41,8 @@ Aplicación Web Progresiva (PWA) ligera, rápida y moderna construida en **Vanil
 | Versión | Descripción y Cambios Principales |
 | :--- | :--- |
 | **v1.0 - v1.7.2** | Inventario base, semáforo visual de stock, persistencia en cesta, PWA offline y feedback háptico. |
-| **v1.8.0 - v1.8.4** | Pasillos personalizables, Modo Lista Compacta, Modo Oscuro/Claro manual, orden alfabético en pasillos y limpieza rápida en buscadores. |
-| **v1.8.5** | **Optimización UI/UX y Filtros Acumulativos:** Eliminación definitiva del botón "Nuevo" en inventario y nuevo filtrado por umbral acumulativo de stock. |
+| **v1.8.0 - v1.8.5** | Pasillos personalizables, Modo Oscuro/Claro manual, orden alfabético en selectores, limpieza de buscadores, eliminación del botón "Nuevo" en inventario y umbrales acumulativos. |
+| **v1.9.0 - v1.9.1** | **Release Final:** Stepper vertical ultracompacto en supermercado, chips de filtro en una línea, modo oscuro forzado en cesta, acordeones en catálogo y modales personalizados. |
 
 ---
 
