@@ -1,5 +1,5 @@
 /* ==========================================================================
-   ORQUESTADOR PRINCIPAL ES6 Y NAVEGACIÓN GLOBAL (v2.0 Alfa)
+   ORQUESTADOR PRINCIPAL ES6 Y NAVEGACIÓN GLOBAL (v2.0 Estable)
    ========================================================================== */
 import { initDB, getState, saveDB, exportBackup, importBackup } from './db.js';
 import { renderInventario, renderProductos } from './inventory.js';
@@ -11,7 +11,7 @@ import { renderPlanner } from './planner.js';
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker v2.0 Alfa registrado:', reg.scope))
+      .then(reg => console.log('Service Worker v2.0 Estable registrado:', reg.scope))
       .catch(err => console.error('Error al registrar Service Worker:', err));
   });
 }
