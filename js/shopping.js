@@ -1,5 +1,5 @@
 /* ==========================================================================
-   MÓDULO DE LISTA DE LA COMPRA Y MODO SUPERMERCADO (v2.0 Alfa)
+   MÓDULO DE LISTA DE LA COMPRA Y MODO SUPERMERCADO (v2.0 Estable)
    ========================================================================== */
 import { getState, saveDB } from './db.js';
 import { getStepForUnit } from './inventory.js';
