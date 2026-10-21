@@ -29,7 +29,6 @@ export function initDB() {
             console.error("Error al cargar localStorage, usando estado por defecto:", e);
         }
     } else {
-        // Migración transparente desde v1.9 si existe
         const oldProducts = JSON.parse(localStorage.getItem('inventory_products'));
         const oldCategories = JSON.parse(localStorage.getItem('inventory_categories'));
         const oldDarkMode = JSON.parse(localStorage.getItem('inventory_darkmode'));
