@@ -1,5 +1,5 @@
 /* ==========================================================================
-   MÓDULO DE BASE DE DATOS LOCAL Y GESTIÓN DE LOCALSTORAGE (v2.0 Alfa)
+   MÓDULO DE BASE DE DATOS LOCAL Y GESTIÓN DE LOCALSTORAGE (v2.0 Estable)
    ========================================================================== */
 const STORAGE_KEY = 'despensa_pwa_data_v2';
 
