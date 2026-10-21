@@ -1,8 +1,7 @@
 /* ==========================================================================
    MÓDULO DE RECETAS (Estructura base para v2.0 Alfa)
    ========================================================================== */
-import { getState, saveDB } from './db.js';
-import { showToast } from './app.js';
+import { getState } from './db.js';
 
 export function renderRecetas() {
     const container = document.getElementById('contenedor-recetas');
@@ -15,7 +14,7 @@ export function renderRecetas() {
         container.innerHTML = `
             <div class="card empty-msg" style="text-align: center; padding: 1.5rem;">
                 <h3>🍳 Catálogo de Recetas Vacío</h3>
-                <p class="product-meta" style="margin-top: 0.5rem;">Usa la herramienta RecetaForge IA en Ajustes para gestionar recetas.</p>
+                <p class="product-meta" style="margin-top: 0.5rem;">Usa la herramienta <strong>RecetaForge IA</strong> en Ajustes para importar recetas desde TheMealDB o crearlas con Gemini IA.</p>
             </div>
         `;
         return;
@@ -26,18 +25,14 @@ export function renderRecetas() {
             <h2>🍳 Mis Recetas (${recipes.length})</h2>
         </div>
         <div class="item-list">
-            ${recipes.map(r => {
-                const categoriaTexto = r.categoria ? r.categoria : 'General';
-                const tiempoTexto = r.tiempo_preparacion_min ? r.tiempo_preparacion_min : 20;
-                return `
-                    <div class="card item-row">
-                        <div class="item-info">
-                            <strong>${r.nombre}</strong>
-                            <div class="product-meta">${categoriaTexto} - Tiempo:${tiempoTexto} min</div>
-                        </div>
+            ${recipes.map(r => `
+                <div class="card item-row">
+                    <div class="item-info">
+                        <strong>${r.nombre}</strong>
+                        <div class="product-meta">${r.categoria \vert{}\vert{} 'General'} \vert{} ⏱️ ${r.tiempo_preparacion_min || 20} min</div>
                     </div>
-                `;
-            }).join('')}
+                </div>
+            `).join('')}
         </div>
     `;
 }
