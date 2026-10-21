@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Control de Inventario Doméstico v1.9.2</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Control de Inventario Doméstico v2.0 Alfa</title>
+    <link rel="stylesheet" href="css/styles.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#111827">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,15 +12,15 @@
 </head>
 <body>
 
-    <!-- ENCABEZADO SUPERIOR CONTEXTUAL (v1.9.2) -->
+    <!-- ENCABEZADO SUPERIOR CONTEXTUAL -->
     <header class="topbar">
         <div id="topbar-title" class="topbar-title">📋 Mi Inventario</div>
         <div id="topbar-actions" class="topbar-actions">
-            <!-- Dinámico según pestaña -->
+            <!-- Dinámico por módulo -->
         </div>
     </header>
 
-    <!-- CONTENEDOR DE NOTIFICACIONES TOAST -->
+    <!-- NOTIFICACIONES TOAST -->
     <div id="toast-container"></div>
 
     <main class="main-container">
@@ -32,7 +32,7 @@
                 <button type="button" id="clear-search-inventario" class="clear-search-btn hidden" title="Limpiar búsqueda">✕</button>
             </div>
 
-            <!-- Chips de filtrado horizontal compactos (1 sola línea garantizada) -->
+            <!-- CHIPS DE FILTRADO COMPACTOS EN 1 SOLA LÍNEA -->
             <div class="filter-chips-scroll">
                 <div class="filter-chips">
                     <button class="chip active" data-filter="all">⚪ Todos</button>
@@ -43,9 +43,7 @@
                 </div>
             </div>
 
-            <div id="lista-inventario-container">
-                <!-- Renderizado dinámico según vista (Agrupado o Lista A-Z) -->
-            </div>
+            <div id="lista-inventario-container"></div>
         </section>
 
         <!-- PESTAÑA 2: CESTA DE LA COMPRA -->
@@ -62,7 +60,7 @@
             </div>
         </section>
 
-        <!-- PESTAÑA 3: PRODUCTOS -->
+        <!-- PESTAÑA 3: PRODUCTOS / CATÁLOGO -->
         <section id="tab-productos" class="tab-content">
             <div class="search-box">
                 <input type="text" id="search-productos" placeholder="Buscar producto...">
@@ -72,7 +70,17 @@
             <div id="contenedor-productos"></div>
         </section>
 
-        <!-- PESTAÑA 4: AJUSTES Y DATOS -->
+        <!-- PESTAÑA 4: RECETAS (MÓDULO v2.0) -->
+        <section id="tab-recetas" class="tab-content">
+            <div id="contenedor-recetas"></div>
+        </section>
+
+        <!-- PESTAÑA 5: PLANIFICADOR (MÓDULO v2.0) -->
+        <section id="tab-planificador" class="tab-content">
+            <div id="contenedor-planificador"></div>
+        </section>
+
+        <!-- PESTAÑA 6: AJUSTES -->
         <section id="tab-ajustes" class="tab-content">
             <div class="section-header">
                 <h2>Panel de Control y Respaldo</h2>
@@ -86,7 +94,13 @@
                 </div>
             </div>
 
-            <!-- Gestión de Pasillos / Categorías -->
+            <!-- Herramientas de Desarrollo / RecetaForge -->
+            <div class="card">
+                <h3>Herramientas v2.0</h3>
+                <p class="product-meta">Accede a la factoría de recetas asistida por IA para generar JSONs estructurados.</p>
+                <a href="tools/receta_forge.html" class="btn btn-secondary full" style="margin-top: 0.5rem; text-decoration: none;">🛠️ Abrir RecetaForge IA</a>
+            </div>
+
             <div class="card">
                 <h3>Gestión de Pasillos / Categorías</h3>
                 <p class="product-meta">Añade o elimina pasillos. Al borrar uno, sus productos pasarán a "Otros".</p>
@@ -132,13 +146,13 @@
             </div>
 
             <div class="app-version-footer">
-                Versión de la app: v1.9.2 (Release Final)
+                Versión de la app: v2.0.0-alfa (Arquitectura Modular ES6)
             </div>
         </section>
 
     </main>
 
-    <!-- MODO LISTA COMPACTA A PANTALLA COMPLETA (v1.9.2: Píldora Horizontal 3 en 1) -->
+    <!-- MODO LISTA COMPACTA (SUPERMERCADO - PÍLDORA HORIZONTAL 3 EN 1) -->
     <div id="compact-mode-overlay" class="compact-overlay hidden">
         <div class="compact-overlay-header">
             <h2>🛒 Lista Compacta (Supermercado)</h2>
@@ -161,6 +175,14 @@
         <button class="nav-btn" data-tab="productos">
             <span class="icon">🏷️</span>
             <span>Productos</span>
+        </button>
+        <button class="nav-btn" data-tab="recetas">
+            <span class="icon">🍳</span>
+            <span>Recetas</span>
+        </button>
+        <button class="nav-btn" data-tab="planificador">
+            <span class="icon">📅</span>
+            <span>Plan</span>
         </button>
         <button class="nav-btn" data-tab="ajustes">
             <span class="icon">⚙️</span>
@@ -224,6 +246,7 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <!-- CARGA MODULAR ES6 -->
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>

@@ -1,8 +1,14 @@
-const CACHE_NAME = 'despensa-pwa-v1.9.2';
+const CACHE_NAME = 'despensa-pwa-v2.0.0-alfa';
 const ASSETS_TO_CACHE = [
+  './',
   './index.html',
-  './styles.css',
-  './app.js',
+  './css/styles.css',
+  './js/app.js',
+  './js/db.js',
+  './js/inventory.js',
+  './js/shopping.js',
+  './js/recipes.js',
+  './js/planner.js',
   './manifest.json',
   './assets/icon-192.png',
   './assets/icon-512.png'
@@ -10,9 +16,7 @@ const ASSETS_TO_CACHE = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
   );
   self.skipWaiting();
 });
