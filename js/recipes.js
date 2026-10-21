@@ -1,5 +1,5 @@
 /* ==========================================================================
-   MÓDULO DE RECETAS (Estructura base para v2.0 Alfa)
+   MÓDULO DE RECETAS (Estructura base para v2.0 Estable)
    ========================================================================== */
 import { getState } from './db.js';
 
