@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VARIABLES Y CONFIGURACIÓN GLOBAL (MODO CLARO / OSCURO v1.9.2)
+   VARIABLES Y CONFIGURACIÓN GLOBAL (MODO CLARO / OSCURO v2.0 Estable)
    ========================================================================== */
 :root {
     --bg-color: #f3f4f6;
@@ -63,7 +63,7 @@ input[type="number"] {
 }
 
 /* ==========================================================================
-   CABECERA SUPERIOR CONTEXTUAL (v1.9.2)
+   CABECERA SUPERIOR CONTEXTUAL (v2.0 Estable)
    ========================================================================== */
 .topbar {
     background: var(--primary-color);
@@ -241,7 +241,7 @@ h2 {
 }
 
 /* ==========================================================================
-   MODO LISTA COMPACTA - PÍLDORA HORIZONTAL 3 EN 1 (v1.9.2)
+   MODO LISTA COMPACTA - PÍLDORA HORIZONTAL 3 EN 1 (v2.0 Estable)
    ========================================================================== */
 .compact-overlay {
     position: fixed;
