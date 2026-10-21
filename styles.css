@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VARIABLES Y CONFIGURACIÓN GLOBAL (MODO CLARO / OSCURO v1.9.1)
+   VARIABLES Y CONFIGURACIÓN GLOBAL (MODO CLARO / OSCURO v1.9.2)
    ========================================================================== */
 :root {
     --bg-color: #f3f4f6;
@@ -63,7 +63,7 @@ input[type="number"] {
 }
 
 /* ==========================================================================
-   CABECERA SUPERIOR CONTEXTUAL (v1.9.1)
+   CABECERA SUPERIOR CONTEXTUAL (v1.9.2)
    ========================================================================== */
 .topbar {
     background: var(--primary-color);
@@ -369,10 +369,6 @@ h2 {
     min-width: 48px;
     text-align: center;
     white-space: nowrap;
-}
-
-.btn-compact-step:active {
-    background: var(--secondary-bg);
 }
 
 /* ==========================================================================
