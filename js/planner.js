@@ -1,5 +1,5 @@
 /* ==========================================================================
-   MÓDULO DE PLANIFICADOR SEMANAL (Estructura base para v2.0 Alfa)
+   MÓDULO DE PLANIFICADOR SEMANAL (Estructura base para v2.0 Estable)
    ========================================================================== */
 export function renderPlanner() {
     const container = document.getElementById('contenedor-planificador');
