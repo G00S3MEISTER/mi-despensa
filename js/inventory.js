@@ -1,5 +1,5 @@
 /* ==========================================================================
-   MÓDULO DE CONTROL DE INVENTARIO Y CATÁLOGO (v2.0 Alfa - Corrección de Filtros y Acordeones)
+   MÓDULO DE CONTROL DE INVENTARIO Y CATÁLOGO (v2.0 Estable - Corrección de Filtros y Acordeones)
    ========================================================================== */
 import { getState, saveDB } from './db.js';
 import { showToast, showCustomConfirm, updateCartBadge } from './app.js';
