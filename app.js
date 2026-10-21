@@ -716,7 +716,7 @@ if (finishPurchaseBtn) {
 }
 
 /* ==========================================================================
-   MODO LISTA COMPACTA CON STEPPER ULTRA-COMPACTO (v1.9.1)
+   MODO LISTA COMPACTA - PÍLDORA HORIZONTAL INTEGRADA 3 EN 1 (v1.9.2)
    ========================================================================== */
 const compactOverlay = document.getElementById('compact-mode-overlay');
 const exitCompactBtn = document.getElementById('btn-exit-compact');
@@ -777,12 +777,10 @@ function renderCompactList() {
                         <input type="checkbox" class="compact-overlay-check" data-id="${p.id}" ${isChecked} onclick="event.stopPropagation(); handleCompactCheckClick('${p.id}', this)">
                     </div>
                     <div class="compact-col-name">${p.name}</div>
-                    <div class="compact-controls-group" onclick="event.stopPropagation()">
-                        <span class="compact-qty-pill">${qty} ${unit}</span>
-                        <div class="compact-stepper-stack">
-                            <button class="btn-compact-step" onclick="adjustCompactQty('${p.id}', ${step})" title="Incrementar">+</button>
-                            <button class="btn-compact-step" onclick="adjustCompactQty('${p.id}', -${step})" title="Reducir">-</button>
-                        </div>
+                    <div class="compact-col-qty-pill" onclick="event.stopPropagation()">
+                        <button class="btn-pill-step" onclick="adjustCompactQty('${p.id}', -${step})" title="Reducir">−</button>
+                        <span class="pill-value">${qty} ${unit}</span>
+                        <button class="btn-pill-step" onclick="adjustCompactQty('${p.id}', ${step})" title="Incrementar">+</button>
                     </div>
                 </div>
             `;
