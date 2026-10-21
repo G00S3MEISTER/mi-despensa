@@ -1,8 +1,8 @@
 /* ==========================================================================
-   MÓDULO DE CONTROL DE INVENTARIO Y CATÁLOGO (v2.0 Alfa)
+   MÓDULO DE CONTROL DE INVENTARIO Y CATÁLOGO (v2.0 Alfa - Corrección de Filtros y Acordeones)
    ========================================================================== */
 import { getState, saveDB } from './db.js';
-import { showToast, showCustomConfirm } from './app.js';
+import { showToast, showCustomConfirm, updateCartBadge } from './app.js';
 
 export const normalizeText = (text) => 
     text ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim() : "";
@@ -39,12 +39,13 @@ export function renderInventario() {
         normalizeText(p.name).includes(query) || normalizeText(p.category).includes(query)
     );
 
+    // Corrección rigurosa de filtros: productos con stock 0 (agotados) deben aparecer en umbrales bajos (<25%, <50%)
     if (state.activeFilter === 'red') {
         filtered = filtered.filter(p => p.currentStock === 0);
     } else if (state.activeFilter === 'orange') {
-        filtered = filtered.filter(p => p.currentStock > 0 && (p.currentStock / p.targetStock) <= 0.25);
+        filtered = filtered.filter(p => p.currentStock === 0 || (p.currentStock / p.targetStock) <= 0.25);
     } else if (state.activeFilter === 'yellow') {
-        filtered = filtered.filter(p => p.currentStock > 0 && (p.currentStock / p.targetStock) <= 0.50);
+        filtered = filtered.filter(p => p.currentStock === 0 || (p.currentStock / p.targetStock) <= 0.50);
     } else if (state.activeFilter === 'green') {
         filtered = filtered.filter(p => p.currentStock > 0 && (p.currentStock / p.targetStock) > 0.50);
     }
@@ -73,6 +74,10 @@ export function renderInventario() {
         Object.keys(grouped).sort().forEach(cat => {
             grouped[cat].sort((a, b) => a.name.localeCompare(b.name));
 
+            const isCollapsed = !!state.collapsedCategories[cat];
+            const arrowSymbol = isCollapsed ? '▼' : '▲';
+            const collapsedClass = isCollapsed ? 'collapsed' : '';
+
             const groupEl = document.createElement('div');
             groupEl.className = 'category-group card';
 
@@ -98,8 +103,11 @@ export function renderInventario() {
             }).join('');
 
             groupEl.innerHTML = `
-                <div class="category-title">${cat}</div>
-                <div class="category-items">${itemsHtml}</div>
+                <div class="category-header-accordion" data-accordion-cat="${cat}">
+                    <span>📂 ${cat} (${grouped[cat].length})</span>
+                    <span class="accordion-arrow">${arrowSymbol}</span>
+                </div>
+                <div class="category-items ${collapsedClass}">${itemsHtml}</div>
             `;
             container.appendChild(groupEl);
         });
@@ -110,7 +118,6 @@ export function renderInventario() {
 
 function createProductListItem(p) {
     const unit = p.unit || 'ud';
-    const step = getStepForUnit(unit);
     const isMinDisabled = p.currentStock <= 0 ? 'disabled' : '';
     const semaphore = getStockSemaphore(p.currentStock, p.targetStock);
 
@@ -134,6 +141,17 @@ function bindInventoryEvents() {
     const container = document.getElementById('lista-inventario-container');
     if (!container) return;
 
+    // Acordeones persistentes en inventario por categoría
+    container.querySelectorAll('.category-header-accordion').forEach(header => {
+        header.onclick = () => {
+            const cat = header.getAttribute('data-accordion-cat');
+            const state = getState();
+            state.collapsedCategories[cat] = !state.collapsedCategories[cat];
+            saveDB();
+            renderInventario();
+        };
+    });
+
     container.querySelectorAll('button[data-action]').forEach(btn => {
         btn.onclick = (e) => {
             const id = e.target.getAttribute('data-id');
@@ -149,6 +167,7 @@ function bindInventoryEvents() {
                 prod.currentStock = Math.round(Math.max(0, prod.currentStock - step) * 100) / 100;
             }
             saveDB();
+            updateCartBadge();
             renderInventario();
         };
     });
@@ -245,6 +264,7 @@ function bindProductosEvents() {
                     () => {
                         state.products = state.products.filter(p => p.id !== id);
                         saveDB();
+                        updateCartBadge();
                         renderProductos();
                         showToast('Producto eliminado', 'warning');
                     }
