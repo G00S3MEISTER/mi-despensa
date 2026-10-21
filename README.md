@@ -4,6 +4,15 @@ Aplicación Web Progresiva (PWA) ligera, rápida y moderna construida en **Vanil
 
 ---
 
+## 🚀 Novedades de la Versión v1.9.2
+
+* **Píldora Horizontal Integrada 3 en 1 (`styles.css` / `app.js`):**
+  * Rediseño táctil del control de cantidades en el Modo Compacto (Supermercado).
+  * Sustitución del stepper vertical por una **píldora horizontal unificada** de formato `[ - ] [ cantidad + unidad ] [ + ]`, diseñada específicamente para facilitar su uso con una sola mano en dispositivos móviles.
+  * Mayor espacio horizontal protegido para nombres largos de productos y respuesta háptica inmediata en cada toque.
+* **Service Worker y Caché:**
+  * Actualización de la caché PWA a `despensa-pwa-v1.9.2`.
+
 ## 🚀 Novedades y Mejoras de la Versión v1.9.1
 
 1. **Stepper Ultra-Compacto en Modo Supermercado (`styles.css` / `app.js`):**
