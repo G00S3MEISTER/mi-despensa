@@ -4,18 +4,16 @@ Aplicación Web Progresiva (PWA) ligera, rápida y moderna construida en **Vanil
 
 ---
 
-## 🚀 Novedades de la Versión v2.0 Alfa (Refactorización Modular)
+## 🚀 Novedades y Correcciones de la Versión v2.0 Alfa
 
-1. **Arquitectura Modular ES6 (`/js/`):**
-   * Transición del monolito a un sistema basado en módulos JS independientes (`db.js`, `inventory.js`, `shopping.js`, `recipes.js`, `planner.js`, `app.js`).
-   * Despliegue de scripts mediante `<script type="module">` para un mantenimiento escalable.
-2. **Preparación del Ecosistema v2.0:**
-   * Integración de la herramienta `/tools/receta_forge.html` (traductor e intérprete de recetas con IA Gemini y API TheMealDB).
-   * Estructura base preparada para la ingesta de JSONs de recetas y planificación de menús semanales.
-3. **Consolidación de UX de la v1.9.2:**
-   * Mantenimiento de la **Píldora Horizontal 3 en 1** táctil con feedback de vibración (`navigator.vibrate`).
-   * Exportación de backups con nomenclatura actualizada `despensa_backup_v2.0_YYYY-MM-DD.json`.
-   * Service Worker actualizado a `despensa-pwa-v2.0.0-alfa`.
+1. **Estabilidad en Filtros de Stock y Acordeones (`/js/inventory.js`):**
+   * Corrección de la condición numérica en los filtros de umbral bajo (`<25%`, `<50%` y agotados `0%`), asegurando que los productos con stock exactamente igual a `0` aparezcan correctamente en las vistas de reposición.
+   * Implementación de acordeones desplegables con persistencia de estado por categoría para colapsar u ocultar ítems.
+2. **Sincronización de Badges y Gestión de IA (`/js/app.js`):**
+   * Actualización inmediata del contador flotante (`badge`) en la cesta al reponer o modificar stock de productos.
+   * Integración de la gestión segura de la API Key de Gemini almacenada en el `localStorage` mediante la clave `'gemini_api_key'`.
+3. **Arquitectura Modular ES6:**
+   * Separación limpia en módulos independientes (`db.js`, `inventory.js`, `shopping.js`, `recipes.js`, `planner.js`, `app.js`) cargados con `<script type="module">`.
 
 ---
 
@@ -25,7 +23,7 @@ Aplicación Web Progresiva (PWA) ligera, rápida y moderna construida en **Vanil
 | :--- | :--- |
 | **v1.0 - v1.8.5** | Inventario base, semáforo visual de stock, pasillos personalizables, modo claro/oscuro y ordenación. |
 | **v1.9.0 - v1.9.2** | Píldora horizontal integrada 3 en 1 para uso a una sola mano en supermercado, acordeones y respaldo JSON. |
-| **v2.0 Alfa** | **Refactorización Modular:** Separación en módulos ES6, integración de `RecetaForge` y cimientos para el Planificador y Recetario. |
+| **v2.0 Alfa** | **Refactorización Modular y Estabilidad:** Migración a ES6 Modules, corrección de filtros de stock en 0, gestión de API Key de Gemini y RecetaForge IA. |
 
 ---
 
@@ -34,4 +32,4 @@ Aplicación Web Progresiva (PWA) ligera, rápida y moderna construida en **Vanil
 * **HTML5 & CSS3:** Estructura semántica, Flexbox, CSS Grid y CSS Variables.
 * **Vanilla JavaScript (ES6 Modules):** Sin frameworks externos, usando `import`/`export`.
 * **Service Workers & Web App Manifest:** Soporte para instalación y funcionamiento 100% offline.
-* **Google Gemini API (`gemini-2.5-flash`) & TheMealDB API:** Generación y estandarización de recetas en `receta_forge.html`.
+* **Google Gemini API & TheMealDB API:** Generación y estandarización de recetas en `receta_forge.html`.
