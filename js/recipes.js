@@ -29,7 +29,7 @@ export function renderRecetas() {
                 <div class="card item-row">
                     <div class="item-info">
                         <strong>${r.nombre}</strong>
-                        <div class="product-meta">${r.categoria \vert{}\vert{} 'General'} \vert{} 👥 ${r.raciones || 4} comensales base</div>
+                        <div class="product-meta">${r.categoria || 'General'} | 👥 ${r.raciones || 4} comensales base</div>
                     </div>
                     <div class="actions">
                         <button class="btn btn-secondary small" data-action="view-recipe" data-id="${r.id}">Ver / Escalar</button>
