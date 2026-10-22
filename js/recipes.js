@@ -1,5 +1,5 @@
 /* ==========================================================================
-   MÓDULO DE RECETAS, RECETAFORGE IA & ESCALADO PROPORCIONAL (v2.1.1)
+   MÓDULO DE RECETAS, RECETAFORGE IA & ESCALADO PROPORCIONAL (v2.1.2)
    Cero uso de sintaxis \vert; uso estricto de operadores lógicos estándar (||).
    ========================================================================== */
 import { getState, saveDB } from './db.js';
@@ -63,7 +63,7 @@ export function openRecetaForgeModal() {
     const modal = document.getElementById('receta-forge-modal');
     if (!modal) return;
     
-    // Resetear a selector de modo inicial
+    // Resetear a selector de modo inicial en paralelo
     showForgeView('selector');
     modal.classList.remove('hidden');
 }
@@ -111,8 +111,10 @@ export function initRecetaForgeEvents() {
 
     if (btnOnline) {
         btnOnline.onclick = () => {
-            document.getElementById('search-mealdb-input').value = '';
-            document.getElementById('mealdb-results-grid').innerHTML = '';
+            const searchInput = document.getElementById('search-mealdb-input');
+            if (searchInput) searchInput.value = '';
+            const grid = document.getElementById('mealdb-results-grid');
+            if (grid) grid.innerHTML = '';
             showForgeView('search');
         };
     }
@@ -123,7 +125,15 @@ export function initRecetaForgeEvents() {
 
     if (btnBack1) btnBack1.onclick = () => showForgeView('selector');
     if (btnBack2) btnBack2.onclick = () => showForgeView('selector');
-    if (btnBackSearch) btnBackSearch.onclick = () => showForgeView('search');
+    if (btnBackSearch) {
+        btnBackSearch.onclick = () => {
+            const searchInput = document.getElementById('search-mealdb-input');
+            if (searchInput) searchInput.value = '';
+            const grid = document.getElementById('mealdb-results-grid');
+            if (grid) grid.innerHTML = '';
+            showForgeView('search');
+        };
+    }
 
     const btnSearchMealDB = document.getElementById('btn-search-mealdb');
     const inputSearchMealDB = document.getElementById('search-mealdb-input');
@@ -210,14 +220,14 @@ function renderMealDBPreview(meal) {
 
         <label>Ingredientes Crudos Originales:</label>
         <div class="raw-data-box">
-            <ul style="padding-left: 16px;">
+            <ul style="padding-left: 18px;">
                 ${rawIngredients.map(i => `<li>${i}</li>`).join('')}
             </ul>
         </div>
 
         <label>Instrucciones Originales:</label>
-        <div class="raw-data-box" style="max-height: 100px;">
-            <p style="white-space: pre-line; font-size: 0.8rem;">${meal.strInstructions}</p>
+        <div class="raw-data-box">
+            <p style="white-space: pre-line; font-size: 0.85rem;">${meal.strInstructions}</p>
         </div>
 
         <button id="btn-interpret-ai" class="btn btn-primary full" style="margin-top: 14px;">✨ 1. Interpretar con IA y Normalizar</button>
@@ -234,7 +244,8 @@ async function interpretRecipeWithAI(meal, rawIngredients) {
         return;
     }
 
-    showToast('Interpretando y traduciendo con Gemini IA...', 'info');
+    // Feedback visual persistente y dinámico para la IA (gemini-3.8-flash)
+    showToast('🤖 Analizando receta con IA (gemini-3.8-flash)...', 'info');
 
     try {
         const systemPrompt = `Devuelve ÚNICAMENTE un objeto JSON válido con la traducción al español y normalización de cantidades en sistema métrico europeo:
@@ -266,7 +277,7 @@ async function interpretRecipeWithAI(meal, rawIngredients) {
 
         fillEditorForm(parsed.nombre, parsed.categoria, parsed.raciones || 4, parsed.ingredientes || [], (parsed.pasos || []).join('\n'));
         showForgeView('editor');
-        showToast('¡Receta interpretada! Valida los datos abajo', 'success');
+        showToast('¡Receta interpretada con éxito! Valida abajo', 'success');
     } catch (err) {
         console.error('Error al interpretar con IA:', err);
         showToast('Error al procesar con IA. Comprueba tu API Key.', 'warning');
