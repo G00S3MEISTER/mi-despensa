@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Control de Inventario Doméstico v2.0 Estable</title>
+    <title>Control de Inventario Doméstico v2.1</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#111827">
@@ -12,13 +12,19 @@
 </head>
 <body>
 
-    <!-- ENCABEZADO SUPERIOR CONTEXTUAL -->
+    <!-- ENCABEZADO SUPERIOR CONTEXTUAL UNIFICADO (v2.1) -->
     <header class="topbar">
         <div id="topbar-title" class="topbar-title">📋 Mi Inventario</div>
         <div id="topbar-actions" class="topbar-actions">
             <!-- Dinámico por módulo -->
         </div>
     </header>
+
+    <!-- BANNER FLOTANTE DE ACTUALIZACIÓN AUTOMÁTICA DE SERVICE WORKER -->
+    <div id="sw-update-banner" class="sw-banner hidden">
+        <span>🚀 Nueva versión v2.1 lista.</span>
+        <button id="btn-sw-reload" class="btn btn-success small">Actualizar</button>
+    </div>
 
     <!-- NOTIFICACIONES TOAST -->
     <div id="toast-container"></div>
@@ -32,7 +38,6 @@
                 <button type="button" id="clear-search-inventario" class="clear-search-btn hidden" title="Limpiar búsqueda">✕</button>
             </div>
 
-            <!-- CHIPS DE FILTRADO COMPACTOS EN 1 SOLA LÍNEA -->
             <div class="filter-chips-scroll">
                 <div class="filter-chips">
                     <button class="chip active" data-filter="all">⚪ Todos</button>
@@ -70,12 +75,12 @@
             <div id="contenedor-productos"></div>
         </section>
 
-        <!-- PESTAÑA 4: RECETAS (MÓDULO v2.0) -->
+        <!-- PESTAÑA 4: RECETAS -->
         <section id="tab-recetas" class="tab-content">
             <div id="contenedor-recetas"></div>
         </section>
 
-        <!-- PESTAÑA 5: PLANIFICADOR (MÓDULO v2.0) -->
+        <!-- PESTAÑA 5: PLANIFICADOR -->
         <section id="tab-planificador" class="tab-content">
             <div id="contenedor-planificador"></div>
         </section>
@@ -94,21 +99,17 @@
                 </div>
             </div>
 
-            <!-- Configuración API Key Gemini -->
+            <!-- Configuración API Key Gemini con Enlace Directo -->
             <div class="card">
                 <h3>Configuración IA (Gemini API)</h3>
-                <p class="product-meta">Introduce tu clave de API de Google Gemini para habilitar la factoría de recetas inteligente.</p>
+                <p class="product-meta">
+                    Clave requerida para traducciones e interpretación de recetas con IA.
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="link-external">Obtener Key en Google AI Studio ↗</a>
+                </p>
                 <div class="form-row" style="margin-top: 0.5rem; display: flex; gap: 8px;">
                     <input type="password" id="input-gemini-key" placeholder="AIzaSy..." style="flex: 1; margin-top: 0;">
                     <button id="btn-save-gemini-key" class="btn btn-primary small">Guardar Key</button>
                 </div>
-            </div>
-
-            <!-- Herramientas de Desarrollo / RecetaForge -->
-            <div class="card">
-                <h3>Herramientas v2.0</h3>
-                <p class="product-meta">Accede a la factoría de recetas asistida por IA para generar JSONs estructurados.</p>
-                <a href="tools/receta_forge.html" class="btn btn-secondary full" style="margin-top: 0.5rem; text-decoration: none;">🛠️ Abrir RecetaForge IA</a>
             </div>
 
             <div class="card">
@@ -156,19 +157,89 @@
             </div>
 
             <div class="app-version-footer">
-                Versión de la app: v2.0.0-alfa (Estabilidad y Ajustes)
+                Versión de la app: v2.1.0-dev
             </div>
         </section>
 
     </main>
 
-    <!-- MODO LISTA COMPACTA (SUPERMERCADO - PÍLDORA HORIZONTAL 3 EN 1) -->
+    <!-- MODO SUPERMERCADO COMPACTO -->
     <div id="compact-mode-overlay" class="compact-overlay hidden">
         <div class="compact-overlay-header">
             <h2>🛒 Lista Compacta (Supermercado)</h2>
             <button id="btn-exit-compact" class="btn btn-danger small">Salir ✕</button>
         </div>
         <div id="compact-overlay-body" class="compact-overlay-body"></div>
+    </div>
+
+    <!-- MODAL INTEGRADO DE RECETAFORGE Y EDICIÓN DE RECETAS -->
+    <div id="receta-forge-modal" class="modal hidden">
+        <div class="modal-box" style="max-width: 650px;">
+            <div class="modal-head">
+                <h3 id="forge-modal-title">🛠️ RecetaForge IA / Crear Receta</h3>
+                <button id="btn-close-forge-modal" class="icon-btn">&times;</button>
+            </div>
+            
+            <div class="forge-tabs-bar">
+                <button id="btn-tab-mealdb" class="btn btn-secondary small active">TheMealDB API</button>
+                <button id="btn-tab-manual" class="btn btn-secondary small">Creación Manual</button>
+            </div>
+
+            <!-- SECCIÓN 1: THEMEALDB & IA -->
+            <div id="section-mealdb" class="forge-section">
+                <div class="search-box" style="margin-top: 10px;">
+                    <input type="text" id="search-mealdb-input" placeholder="Buscar plato en inglés (ej: Arrabiata, Omelette)...">
+                    <button id="btn-search-mealdb" class="btn btn-primary small" style="position: absolute; right: 4px; top: 4px; min-height: 36px;">Buscar</button>
+                </div>
+
+                <div id="mealdb-results-grid" class="mealdb-grid"></div>
+            </div>
+
+            <!-- SECCIÓN 2: FORMULARIO DE RECETA (EDITABLE) -->
+            <div id="section-recipe-editor" class="forge-section hidden">
+                <input type="hidden" id="edit-recipe-id">
+                <label for="recipe-input-name">Nombre de la Receta *</label>
+                <input type="text" id="recipe-input-name" placeholder="Ej. Tortilla de Patatas Tradicional">
+
+                <div class="form-row">
+                    <div>
+                        <label for="recipe-input-category">Categoría</label>
+                        <input type="text" id="recipe-input-category" placeholder="Ej. Acompañamiento, Principal">
+                    </div>
+                    <div>
+                        <label for="recipe-input-diners">Comensales Base *</label>
+                        <input type="number" id="recipe-input-diners" min="1" value="4">
+                    </div>
+                </div>
+
+                <label style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Ingredientes</span>
+                    <button type="button" id="btn-add-ingredient-row" class="btn btn-secondary small">+ Ingrediente</button>
+                </label>
+                
+                <div id="ingredients-editor-list" class="ingredients-editor-container"></div>
+
+                <label for="recipe-input-steps" style="margin-top: 12px;">Pasos de Elaboración</label>
+                <textarea id="recipe-input-steps" rows="4" placeholder="Escribe un paso por línea..."></textarea>
+
+                <div class="modal-actions" style="margin-top: 16px;">
+                    <button type="button" id="btn-cancel-recipe" class="btn btn-secondary">Cancelar</button>
+                    <button type="button" id="btn-save-recipe-final" class="btn btn-primary">Guardar Receta</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE VISUALIZACIÓN / ESCALADO DE RECETA -->
+    <div id="view-recipe-modal" class="modal hidden">
+        <div class="modal-box" style="max-width: 580px;">
+            <div class="modal-head">
+                <h3 id="view-recipe-title">Título Receta</h3>
+                <button id="btn-close-view-modal" class="icon-btn">&times;</button>
+            </div>
+
+            <div id="view-recipe-body"></div>
+        </div>
     </div>
 
     <!-- NAVEGACIÓN INFERIOR FIJA -->
@@ -200,7 +271,7 @@
         </button>
     </nav>
 
-    <!-- MODAL DE CREACIÓN / EDICIÓN -->
+    <!-- MODAL DE CREACIÓN / EDICIÓN DE PRODUCTOS -->
     <div id="product-modal" class="modal hidden">
         <div class="modal-box">
             <div class="modal-head">
@@ -256,7 +327,6 @@
         </div>
     </div>
 
-    <!-- CARGA MODULAR ES6 -->
     <script type="module" src="js/app.js"></script>
 </body>
 </html>

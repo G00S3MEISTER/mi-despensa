@@ -1,19 +1,44 @@
 /* ==========================================================================
-   ORQUESTADOR PRINCIPAL ES6 Y NAVEGACIÓN GLOBAL (v2.0 Estable)
+   ORQUESTADOR PRINCIPAL ES6, AUTO-UPDATE SW Y ENRUTADOR GLOBAL (v2.1)
    ========================================================================== */
 import { initDB, getState, saveDB, exportBackup, importBackup } from './db.js';
 import { renderInventario, renderProductos } from './inventory.js';
 import { renderCompra, initCartGlobalButtons, openCompactMode, closeCompactMode, copyShoppingListToClipboard } from './shopping.js';
-import { renderRecetas } from './recipes.js';
+import { renderRecetas, openRecetaForgeModal, initRecetaForgeEvents } from './recipes.js';
 import { renderPlanner } from './planner.js';
 
-/* REGISTRO DE SERVICE WORKER */
+/* SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA DE SERVICE WORKER (ANTI-BLOQUEOS) */
+let newWorker;
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('Service Worker v2.0 Estable registrado:', reg.scope))
-      .catch(err => console.error('Error al registrar Service Worker:', err));
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      newWorker = reg.installing;
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          showUpdateBanner();
+        }
+      });
+    });
   });
+
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!refreshing) {
+      refreshing = true;
+      window.location.reload();
+    }
+  });
+}
+
+function showUpdateBanner() {
+    const banner = document.getElementById('sw-update-banner');
+    const reloadBtn = document.getElementById('btn-sw-reload');
+    if (banner && reloadBtn) {
+        banner.classList.remove('hidden');
+        reloadBtn.onclick = () => {
+            if (newWorker) newWorker.postMessage({ action: 'skipWaiting' });
+        };
+    }
 }
 
 export function showToast(message, type = 'info') {
@@ -126,7 +151,13 @@ function updateTopbarContext(tabName) {
         actionsEl.appendChild(newProdBtn);
 
     } else if (tabName === 'recetas') {
-        titleEl.textContent = '🍳 Recetario v2.0';
+        titleEl.textContent = '🍳 Recetario v2.1';
+        const newRecipeBtn = document.createElement('button');
+        newRecipeBtn.className = 'btn btn-secondary small';
+        newRecipeBtn.textContent = '+ Receta';
+        newRecipeBtn.onclick = () => openRecetaForgeModal();
+        actionsEl.appendChild(newRecipeBtn);
+
     } else if (tabName === 'planificador') {
         titleEl.textContent = '📅 Planificador Semanal';
     } else if (tabName === 'ajustes') {
@@ -320,6 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initNavigation();
     initCartGlobalButtons();
+    initRecetaForgeEvents();
     updateCartBadge();
     renderInventario();
 
@@ -351,7 +383,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Guardar API Key de Gemini en localStorage
     const saveKeyBtn = document.getElementById('btn-save-gemini-key');
     if (saveKeyBtn) {
         saveKeyBtn.onclick = () => {

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   MÓDULO DE BASE DE DATOS LOCAL Y GESTIÓN DE LOCALSTORAGE (v2.0 Estable)
+   MÓDULO DE BASE DE DATOS LOCAL Y LOCALSTORAGE (v2.1)
    ========================================================================== */
 const STORAGE_KEY = 'despensa_pwa_data_v2';
 
@@ -8,7 +8,7 @@ const DEFAULT_CATEGORIES = [
 ];
 
 let appState = {
-    version: 'v2.0.0-alfa',
+    version: 'v2.1.0',
     products: [],
     categories: [...DEFAULT_CATEGORIES],
     recipes: [],
@@ -26,25 +26,15 @@ export function initDB() {
             const parsed = JSON.parse(raw);
             appState = { ...appState, ...parsed };
         } catch (e) {
-            console.error("Error al cargar localStorage, usando estado por defecto:", e);
+            console.error("Error al cargar localStorage, usando estado base:", e);
         }
     } else {
-        const oldProducts = JSON.parse(localStorage.getItem('inventory_products'));
-        const oldCategories = JSON.parse(localStorage.getItem('inventory_categories'));
-        const oldDarkMode = JSON.parse(localStorage.getItem('inventory_darkmode'));
-        
-        if (oldProducts) appState.products = oldProducts;
-        if (oldCategories) appState.categories = oldCategories;
-        if (typeof oldDarkMode === 'boolean') appState.darkMode = oldDarkMode;
-
         saveDB();
     }
     return appState;
 }
 
-export function getState() {
-    return appState;
-}
+export function getState() { return appState; }
 
 export function saveDB() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
@@ -55,7 +45,7 @@ export function exportBackup() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `despensa_backup_v2.0_${todayStr}.json`);
+    downloadAnchor.setAttribute("download", `despensa_backup_v2.1_${todayStr}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
