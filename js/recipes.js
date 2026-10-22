@@ -317,7 +317,7 @@ function openViewRecipeModal(id) {
             <ul style="margin-top: 6px; margin-bottom: 12px; padding-left: 20px;">
                 ${(recipe.ingredientes || []).map(ing => {
                     const scaledVal = Math.round((ing.cantidad_num * factor) * 100) / 100;
-                    return `<li style="margin-bottom: 4px;"><strong>${scaledVal} ${ing.unidad \vert{}\vert{} ''}</strong> -${ing.nombre}</li>`;
+                    return `<li style="margin-bottom: 4px;"><strong>${scaledVal} ${ing.unidad || ''}</strong> - ${ing.nombre}</li>`;
                 }).join('')}
             </ul>
 
