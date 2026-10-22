@@ -1,5 +1,5 @@
 /* ==========================================================================
-   MÓDULO DE BASE DE DATOS LOCAL Y LOCALSTORAGE (v2.1.1)
+   MÓDULO DE BASE DE DATOS LOCAL Y LOCALSTORAGE (v2.1.2)
    ========================================================================== */
 const STORAGE_KEY = 'despensa_pwa_data_v2';
 
@@ -8,7 +8,7 @@ const DEFAULT_CATEGORIES = [
 ];
 
 let appState = {
-    version: 'v2.1.1',
+    version: 'v2.1.2',
     products: [],
     categories: [...DEFAULT_CATEGORIES],
     recipes: [],
@@ -45,7 +45,7 @@ export function exportBackup() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `despensa_backup_v2.1.1_${todayStr}.json`);
+    downloadAnchor.setAttribute("download", `despensa_backup_v2.1.2_${todayStr}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
