@@ -1,4 +1,4 @@
-const CACHE_NAME = 'despensa-pwa-v2.1.0';
+const CACHE_NAME = 'despensa-pwa-v2.1.1';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -36,7 +36,6 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-/* ESCUCHA DE MENSAJE SKIP_WAITING PARA ACTUALIZACIÓN INSTANTÁNEA */
 self.addEventListener('message', (event) => {
   if (event.data && event.data.action === 'skipWaiting') {
     self.skipWaiting();

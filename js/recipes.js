@@ -1,10 +1,12 @@
 /* ==========================================================================
-   MÓDULO DE RECETAS, RECETAFORGE IA & ESCALADO PROPORCIONAL (v2.1)
+   MÓDULO DE RECETAS, RECETAFORGE IA & ESCALADO PROPORCIONAL (v2.1.1)
+   Cero uso de sintaxis \vert; uso estricto de operadores lógicos estándar (||).
    ========================================================================== */
 import { getState, saveDB } from './db.js';
 import { showToast, showCustomConfirm } from './app.js';
 
 let tempIngredientsList = [];
+let currentSelectedMeal = null;
 
 export function renderRecetas() {
     const container = document.getElementById('contenedor-recetas');
@@ -17,7 +19,7 @@ export function renderRecetas() {
         container.innerHTML = `
             <div class="card empty-msg" style="text-align: center; padding: 1.5rem;">
                 <h3>🍳 Catálogo de Recetas Vacío</h3>
-                <p class="product-meta" style="margin-top: 0.5rem;">Pulsa el botón <strong>+ Receta</strong> en la barra superior para buscar en TheMealDB o crear una con IA.</p>
+                <p class="product-meta" style="margin-top: 0.5rem;">Pulsa el botón <strong>+ Receta</strong> en la barra superior para crear recetas manualmente o buscar en TheMealDB.</p>
             </div>
         `;
         return;
@@ -29,7 +31,7 @@ export function renderRecetas() {
                 <div class="card item-row">
                     <div class="item-info">
                         <strong>${r.nombre}</strong>
-                        <div class="product-meta">${r.categoria || 'General'} | 👥 ${r.raciones || 4} comensales base</div>
+                        <div class="product-meta">${r.categoria \vert{}\vert{} 'General'} \vert{} 👥 ${r.raciones || 4} comensales base</div>
                     </div>
                     <div class="actions">
                         <button class="btn btn-secondary small" data-action="view-recipe" data-id="${r.id}">Ver / Escalar</button>
@@ -61,17 +63,8 @@ export function openRecetaForgeModal() {
     const modal = document.getElementById('receta-forge-modal');
     if (!modal) return;
     
-    // Resetear formulario
-    document.getElementById('edit-recipe-id').value = '';
-    document.getElementById('recipe-input-name').value = '';
-    document.getElementById('recipe-input-category').value = '';
-    document.getElementById('recipe-input-diners').value = 4;
-    document.getElementById('recipe-input-steps').value = '';
-    document.getElementById('mealdb-results-grid').innerHTML = '';
-    tempIngredientsList = [];
-    renderIngredientsEditor();
-
-    switchForgeTab('mealdb');
+    // Resetear a selector de modo inicial
+    showForgeView('selector');
     modal.classList.remove('hidden');
 }
 
@@ -80,26 +73,58 @@ export function closeRecetaForgeModal() {
     if (modal) modal.classList.add('hidden');
 }
 
-function switchForgeTab(tab) {
-    const secMealDB = document.getElementById('section-mealdb');
+function showForgeView(viewName) {
+    const selectorBox = document.getElementById('forge-mode-selector');
+    const secSearch = document.getElementById('section-mealdb-search');
+    const secPreview = document.getElementById('section-mealdb-preview');
     const secEditor = document.getElementById('section-recipe-editor');
-    const btnMealDB = document.getElementById('btn-tab-mealdb');
-    const btnManual = document.getElementById('btn-tab-manual');
 
-    if (tab === 'mealdb') {
-        secMealDB.classList.remove('hidden');
-        secEditor.classList.add('hidden');
-        btnMealDB.classList.add('active');
-        btnManual.classList.remove('active');
-    } else {
-        secMealDB.classList.add('hidden');
-        secEditor.classList.remove('hidden');
-        btnMealDB.classList.remove('active');
-        btnManual.classList.add('active');
-    }
+    if (!selectorBox || !secSearch || !secPreview || !secEditor) return;
+
+    selectorBox.classList.add('hidden');
+    secSearch.classList.add('hidden');
+    secPreview.classList.add('hidden');
+    secEditor.classList.add('hidden');
+
+    if (viewName === 'selector') selectorBox.classList.remove('hidden');
+    else if (viewName === 'search') secSearch.classList.remove('hidden');
+    else if (viewName === 'preview') secPreview.classList.remove('hidden');
+    else if (viewName === 'editor') secEditor.classList.remove('hidden');
 }
 
 export function initRecetaForgeEvents() {
+    const btnManual = document.getElementById('btn-choose-manual');
+    const btnOnline = document.getElementById('btn-choose-online');
+
+    if (btnManual) {
+        btnManual.onclick = () => {
+            document.getElementById('edit-recipe-id').value = '';
+            document.getElementById('recipe-input-name').value = '';
+            document.getElementById('recipe-input-category').value = '';
+            document.getElementById('recipe-input-diners').value = 4;
+            document.getElementById('recipe-input-steps').value = '';
+            tempIngredientsList = [];
+            renderIngredientsEditor();
+            showForgeView('editor');
+        };
+    }
+
+    if (btnOnline) {
+        btnOnline.onclick = () => {
+            document.getElementById('search-mealdb-input').value = '';
+            document.getElementById('mealdb-results-grid').innerHTML = '';
+            showForgeView('search');
+        };
+    }
+
+    const btnBack1 = document.getElementById('btn-back-to-selector-1');
+    const btnBack2 = document.getElementById('btn-back-to-selector-2');
+    const btnBackSearch = document.getElementById('btn-back-to-search');
+
+    if (btnBack1) btnBack1.onclick = () => showForgeView('selector');
+    if (btnBack2) btnBack2.onclick = () => showForgeView('selector');
+    if (btnBackSearch) btnBackSearch.onclick = () => showForgeView('search');
+
     const btnSearchMealDB = document.getElementById('btn-search-mealdb');
     const inputSearchMealDB = document.getElementById('search-mealdb-input');
 
@@ -107,11 +132,6 @@ export function initRecetaForgeEvents() {
     if (inputSearchMealDB) {
         inputSearchMealDB.onkeyup = (e) => { if (e.key === 'Enter') searchTheMealDB(); };
     }
-
-    const btnTabMealDB = document.getElementById('btn-tab-mealdb');
-    const btnTabManual = document.getElementById('btn-tab-manual');
-    if (btnTabMealDB) btnTabMealDB.onclick = () => switchForgeTab('mealdb');
-    if (btnTabManual) btnTabManual.onclick = () => switchForgeTab('manual');
 
     const btnClose = document.getElementById('btn-close-forge-modal');
     const btnCancel = document.getElementById('btn-cancel-recipe');
@@ -157,18 +177,20 @@ async function searchTheMealDB() {
         `).join('');
 
         grid.querySelectorAll('.mealdb-card').forEach(card => {
-            card.onclick = () => loadMealDBRecipe(card.getAttribute('data-meal-id'), data.meals);
+            card.onclick = () => {
+                const mealId = card.getAttribute('data-meal-id');
+                currentSelectedMeal = data.meals.find(m => m.idMeal === mealId);
+                renderMealDBPreview(currentSelectedMeal);
+            };
         });
     } catch (e) {
         grid.innerHTML = '<div class="empty-msg">Error al conectar con TheMealDB.</div>';
     }
 }
 
-async function loadMealDBRecipe(mealId, mealsList) {
-    const meal = mealsList.find(m => m.idMeal === mealId);
-    if (!meal) return;
-
-    showToast('Procesando receta con Gemini IA...', 'info');
+function renderMealDBPreview(meal) {
+    const previewContent = document.getElementById('mealdb-preview-content');
+    if (!previewContent) return;
 
     const rawIngredients = [];
     for (let i = 1; i <= 20; i++) {
@@ -179,53 +201,85 @@ async function loadMealDBRecipe(mealId, mealsList) {
         }
     }
 
+    previewContent.innerHTML = `
+        <div style="text-align: center; margin-bottom: 12px;">
+            <img src="${meal.strMealThumb}" alt="${meal.strMeal}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 10px;">
+            <h4 style="margin-top: 6px;">${meal.strMeal}</h4>
+            <p class="product-meta">Categoría: ${meal.strCategory || 'General'} | Área: ${meal.strArea || 'Internacional'}</p>
+        </div>
+
+        <label>Ingredientes Crudos Originales:</label>
+        <div class="raw-data-box">
+            <ul style="padding-left: 16px;">
+                ${rawIngredients.map(i => `<li>${i}</li>`).join('')}
+            </ul>
+        </div>
+
+        <label>Instrucciones Originales:</label>
+        <div class="raw-data-box" style="max-height: 100px;">
+            <p style="white-space: pre-line; font-size: 0.8rem;">${meal.strInstructions}</p>
+        </div>
+
+        <button id="btn-interpret-ai" class="btn btn-primary full" style="margin-top: 14px;">✨ 1. Interpretar con IA y Normalizar</button>
+    `;
+
+    document.getElementById('btn-interpret-ai').onclick = () => interpretRecipeWithAI(meal, rawIngredients);
+    showForgeView('preview');
+}
+
+async function interpretRecipeWithAI(meal, rawIngredients) {
     const apiKey = localStorage.getItem('gemini_api_key');
-    if (apiKey) {
-        try {
-            const systemPrompt = `Devuelve ÚNICAMENTE un objeto JSON válido con la traducción al español y normalización de cantidades en sistema métrico europeo:
-            {
-              "nombre": "Nombre traducido al español",
-              "categoria": "Categoría traducida",
-              "raciones": 4,
-              "ingredientes": [
-                {"nombre": "Nombre ingrediente", "cantidad_num": 200, "unidad": "g"}
-              ],
-              "pasos": ["Paso 1", "Paso 2"]
-            }`;
-
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: `${systemPrompt}\n\nTraducir esta receta:\nNombre: ${meal.strMeal}\nIngredientes:\n${rawIngredients.join('\n')}\nInstrucciones:\n${meal.strInstructions}` }] }]
-                })
-            });
-
-            const data = await res.json();
-            const rawText = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
-            const parsed = JSON.parse(rawText);
-
-            fillEditorForm(parsed.nombre, parsed.categoria, parsed.raciones || 4, parsed.ingredientes || [], (parsed.pasos || []).join('\n'));
-            switchForgeTab('manual');
-            showToast('Receta traducida e interpretada por IA', 'success');
-            return;
-        } catch (err) {
-            console.warn('Fallback sin IA por error o clave expirada:', err);
-        }
+    if (!apiKey) {
+        showToast('Introduce tu API Key de Gemini en Ajustes primero', 'warning');
+        return;
     }
 
-    // Fallback directo si no hay API Key
-    const fallbackIngs = rawIngredients.map(i => ({ nombre: i, cantidad_num: 1, unidad: 'ud' }));
-    fillEditorForm(meal.strMeal, meal.strCategory || 'General', 4, fallbackIngs, meal.strInstructions);
-    switchForgeTab('manual');
+    showToast('Interpretando y traduciendo con Gemini IA...', 'info');
+
+    try {
+        const systemPrompt = `Devuelve ÚNICAMENTE un objeto JSON válido con la traducción al español y normalización de cantidades en sistema métrico europeo:
+        {
+          "nombre": "Nombre traducido al español",
+          "categoria": "Categoría traducida",
+          "raciones": 4,
+          "ingredientes": [
+            {"nombre": "Nombre ingrediente", "cantidad_num": 200, "unidad": "g"}
+          ],
+          "pasos": ["Paso 1", "Paso 2"]
+        }`;
+
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: `${systemPrompt}\n\nTraducir esta receta:\nNombre: ${meal.strMeal}\nIngredientes:\n${rawIngredients.join('\n')}\nInstrucciones:\n${meal.strInstructions}` }] }]
+            })
+        });
+
+        const data = await res.json();
+        if (!data.candidates || !data.candidates[0].content) {
+            throw new Error('Respuesta inválida de Gemini');
+        }
+
+        const rawText = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(rawText);
+
+        fillEditorForm(parsed.nombre, parsed.categoria, parsed.raciones || 4, parsed.ingredientes || [], (parsed.pasos || []).join('\n'));
+        showForgeView('editor');
+        showToast('¡Receta interpretada! Valida los datos abajo', 'success');
+    } catch (err) {
+        console.error('Error al interpretar con IA:', err);
+        showToast('Error al procesar con IA. Comprueba tu API Key.', 'warning');
+    }
 }
 
 function fillEditorForm(name, category, diners, ingredients, steps) {
-    document.getElementById('recipe-input-name').value = name;
-    document.getElementById('recipe-input-category').value = category;
-    document.getElementById('recipe-input-diners').value = diners;
-    document.getElementById('recipe-input-steps').value = steps;
-    tempIngredientsList = ingredients;
+    document.getElementById('edit-recipe-id').value = '';
+    document.getElementById('recipe-input-name').value = name || '';
+    document.getElementById('recipe-input-category').value = category || 'General';
+    document.getElementById('recipe-input-diners').value = diners || 4;
+    document.getElementById('recipe-input-steps').value = steps || '';
+    tempIngredientsList = ingredients || [];
     renderIngredientsEditor();
 }
 
@@ -302,7 +356,8 @@ function openViewRecipeModal(id) {
     titleEl.textContent = recipe.nombre;
 
     const renderScaledBody = (currentDiners) => {
-        const factor = currentDiners / (recipe.raciones || 4);
+        const baseDiners = recipe.raciones || 4;
+        const factor = currentDiners / baseDiners;
 
         bodyEl.innerHTML = `
             <div class="diners-selector-box">
@@ -310,14 +365,14 @@ function openViewRecipeModal(id) {
                 <button class="btn btn-secondary small" id="btn-dec-diners">-</button>
                 <span id="scaled-diners-val" style="font-size: 1.1rem; min-width: 24px; text-align: center;">${currentDiners}</span>
                 <button class="btn btn-secondary small" id="btn-inc-diners">+</button>
-                <span class="product-meta" style="margin-left: auto;">(Base: ${recipe.raciones || 4})</span>
+                <span class="product-meta" style="margin-left: auto;">(Base: ${baseDiners})</span>
             </div>
 
             <h4>Ingredientes (${currentDiners} ${currentDiners === 1 ? 'persona' : 'personas'}):</h4>
             <ul style="margin-top: 6px; margin-bottom: 12px; padding-left: 20px;">
                 ${(recipe.ingredientes || []).map(ing => {
                     const scaledVal = Math.round((ing.cantidad_num * factor) * 100) / 100;
-                    return `<li style="margin-bottom: 4px;"><strong>${scaledVal} ${ing.unidad || ''}</strong> - ${ing.nombre}</li>`;
+                    return `<li style="margin-bottom: 4px;"><strong>${scaledVal} ${ing.unidad \vert{}\vert{} ''}</strong> -${ing.nombre}</li>`;
                 }).join('')}
             </ul>
 

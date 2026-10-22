@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Control de Inventario Doméstico v2.1</title>
+    <title>Control de Inventario Doméstico v2.1.1</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#111827">
@@ -12,7 +12,7 @@
 </head>
 <body>
 
-    <!-- ENCABEZADO SUPERIOR CONTEXTUAL UNIFICADO (v2.1) -->
+    <!-- ENCABEZADO SUPERIOR CONTEXTUAL UNIFICADO (v2.1.1) -->
     <header class="topbar">
         <div id="topbar-title" class="topbar-title">📋 Mi Inventario</div>
         <div id="topbar-actions" class="topbar-actions">
@@ -22,7 +22,7 @@
 
     <!-- BANNER FLOTANTE DE ACTUALIZACIÓN AUTOMÁTICA DE SERVICE WORKER -->
     <div id="sw-update-banner" class="sw-banner hidden">
-        <span>🚀 Nueva versión v2.1 lista.</span>
+        <span>🚀 Nueva versión v2.1.1 lista.</span>
         <button id="btn-sw-reload" class="btn btn-success small">Actualizar</button>
     </div>
 
@@ -157,7 +157,7 @@
             </div>
 
             <div class="app-version-footer">
-                Versión de la app: v2.1.0-dev
+                Versión de la app: v2.1.1
             </div>
         </section>
 
@@ -172,39 +172,48 @@
         <div id="compact-overlay-body" class="compact-overlay-body"></div>
     </div>
 
-    <!-- MODAL INTEGRADO DE RECETAFORGE Y EDICIÓN DE RECETAS -->
+    <!-- MODAL DE SELECCIÓN Y RECETAFORGE (v2.1.1) -->
     <div id="receta-forge-modal" class="modal hidden">
         <div class="modal-box" style="max-width: 650px;">
             <div class="modal-head">
-                <h3 id="forge-modal-title">🛠️ RecetaForge IA / Crear Receta</h3>
+                <h3 id="forge-modal-title">🍳 Gestor de Recetas</h3>
                 <button id="btn-close-forge-modal" class="icon-btn">&times;</button>
             </div>
             
-            <div class="forge-tabs-bar">
-                <button id="btn-tab-mealdb" class="btn btn-secondary small active">TheMealDB API</button>
-                <button id="btn-tab-manual" class="btn btn-secondary small">Creación Manual</button>
+            <!-- SELECTOR INICIAL DE MODO -->
+            <div id="forge-mode-selector" class="forge-mode-select-box">
+                <button id="btn-choose-manual" class="btn btn-primary full" style="padding: 1rem; font-size: 1.05rem;">✏️ Crear Receta Manualmente</button>
+                <button id="btn-choose-online" class="btn btn-secondary full" style="padding: 1rem; font-size: 1.05rem; margin-top: 10px;">🌐 Buscar en TheMealDB (con IA)</button>
             </div>
 
-            <!-- SECCIÓN 1: THEMEALDB & IA -->
-            <div id="section-mealdb" class="forge-section">
-                <div class="search-box" style="margin-top: 10px;">
-                    <input type="text" id="search-mealdb-input" placeholder="Buscar plato en inglés (ej: Arrabiata, Omelette)...">
+            <!-- SECCIÓN 1: BUSCADOR THEMEALDB -->
+            <div id="section-mealdb-search" class="forge-section hidden">
+                <button id="btn-back-to-selector-1" class="btn btn-secondary small" style="margin-bottom: 10px;">← Volver</button>
+                <div class="search-box">
+                    <input type="text" id="search-mealdb-input" placeholder="Buscar plato en inglés (ej: Carbonara, Lasagna)...">
                     <button id="btn-search-mealdb" class="btn btn-primary small" style="position: absolute; right: 4px; top: 4px; min-height: 36px;">Buscar</button>
                 </div>
-
                 <div id="mealdb-results-grid" class="mealdb-grid"></div>
             </div>
 
-            <!-- SECCIÓN 2: FORMULARIO DE RECETA (EDITABLE) -->
+            <!-- SECCIÓN 2: VISTA PREVIA Y VALIDACIÓN INTERMEDIA ONLINE -->
+            <div id="section-mealdb-preview" class="forge-section hidden">
+                <button id="btn-back-to-search" class="btn btn-secondary small" style="margin-bottom: 10px;">← Volver a resultados</button>
+                <div id="mealdb-preview-content"></div>
+            </div>
+
+            <!-- SECCIÓN 3: EDITOR FORMULARIO (MANUAL O POST-IA) -->
             <div id="section-recipe-editor" class="forge-section hidden">
+                <button id="btn-back-to-selector-2" class="btn btn-secondary small" style="margin-bottom: 10px;">← Volver</button>
                 <input type="hidden" id="edit-recipe-id">
+                
                 <label for="recipe-input-name">Nombre de la Receta *</label>
                 <input type="text" id="recipe-input-name" placeholder="Ej. Tortilla de Patatas Tradicional">
 
                 <div class="form-row">
                     <div>
                         <label for="recipe-input-category">Categoría</label>
-                        <input type="text" id="recipe-input-category" placeholder="Ej. Acompañamiento, Principal">
+                        <input type="text" id="recipe-input-category" placeholder="Ej. Principal, Postre">
                     </div>
                     <div>
                         <label for="recipe-input-diners">Comensales Base *</label>
@@ -224,7 +233,7 @@
 
                 <div class="modal-actions" style="margin-top: 16px;">
                     <button type="button" id="btn-cancel-recipe" class="btn btn-secondary">Cancelar</button>
-                    <button type="button" id="btn-save-recipe-final" class="btn btn-primary">Guardar Receta</button>
+                    <button type="button" id="btn-save-recipe-final" class="btn btn-primary">Guardar Receta en la PWA</button>
                 </div>
             </div>
         </div>
