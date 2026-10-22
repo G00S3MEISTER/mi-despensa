@@ -1,5 +1,5 @@
 /* ==========================================================================
-   ORQUESTADOR PRINCIPAL ES6, AUTO-UPDATE SW Y ENRUTADOR GLOBAL (v2.1.1)
+   ORQUESTADOR PRINCIPAL ES6, AUTO-UPDATE SW Y ENRUTADOR GLOBAL (v2.1.2)
    ========================================================================== */
 import { initDB, getState, saveDB, exportBackup, importBackup } from './db.js';
 import { renderInventario, renderProductos } from './inventory.js';
@@ -151,7 +151,7 @@ function updateTopbarContext(tabName) {
         actionsEl.appendChild(newProdBtn);
 
     } else if (tabName === 'recetas') {
-        titleEl.textContent = '🍳 Recetario v2.1.1';
+        titleEl.textContent = '🍳 Recetario v2.1.2';
         const newRecipeBtn = document.createElement('button');
         newRecipeBtn.className = 'btn btn-secondary small';
         newRecipeBtn.textContent = '+ Receta';
