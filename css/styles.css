@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VARIABLES Y CONFIGURACIÓN GLOBAL (v2.1.1)
+   VARIABLES Y CONFIGURACIÓN GLOBAL (v2.1.2)
    ========================================================================== */
 :root {
     --bg-color: #f3f4f6;
@@ -150,7 +150,6 @@ h2 { font-size: 1.2rem; color: var(--primary-color); margin: 0; }
 .unit-text { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); }
 .bulk-actions-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
 .cart-footer-action { margin-top: 1rem; }
-
 .btn-super-toggle { background: #0284c7; color: #ffffff; padding: 0.4rem 0.75rem; font-size: 0.85rem; border-radius: 8px; flex-shrink: 0; min-height: 40px; }
 
 /* MODO COMPACTO */
@@ -170,24 +169,25 @@ h2 { font-size: 1.2rem; color: var(--primary-color); margin: 0; }
 .btn-pill-step { background: transparent; color: var(--primary-color); border: none; width: 32px; height: 100%; font-size: 0.95rem; font-weight: 800; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .pill-value { padding: 0 6px; font-size: 0.85rem; font-weight: 700; color: var(--primary-color); min-width: 48px; text-align: center; }
 
-/* RECETAFORGE & MODALES RECETAS (v2.1.1) */
-.forge-mode-select-box { display: flex; flex-direction: column; gap: 10px; padding: 1rem 0; }
-.mealdb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 12px; max-height: 280px; overflow-y: auto; }
+/* RECETAFORGE & MODALES RECETAS (v2.1.2 - Botones en Paralelo y Scroll Fluido) */
+.forge-mode-select-row { display: flex; gap: 10px; padding: 1.2rem 0; width: 100%; }
+.mealdb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 14px; }
 .mealdb-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 6px; text-align: center; cursor: pointer; transition: transform 0.15s ease; }
 .mealdb-card:hover { transform: scale(1.02); }
 .mealdb-card img { width: 100%; height: 90px; object-fit: cover; border-radius: 6px; }
 .mealdb-card-title { font-size: 0.8rem; font-weight: 700; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.ingredients-editor-container { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; margin-top: 6px; }
+/* Cajas fluidas sin scroll excesivo en interior */
+.ingredients-editor-container { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
 .ingredient-edit-row { display: flex; gap: 6px; align-items: center; }
 .ingredient-edit-row input { margin-top: 0; min-height: 36px; padding: 4px 8px; }
 
 .diners-selector-box { display: flex; align-items: center; gap: 8px; background: var(--secondary-bg); padding: 8px 12px; border-radius: 10px; margin-bottom: 12px; }
 .diners-selector-box span { font-weight: 700; font-size: 0.9rem; }
 
-.raw-data-box { background: var(--secondary-bg); padding: 10px; border-radius: 8px; font-size: 0.85rem; max-height: 120px; overflow-y: auto; margin-bottom: 10px; }
+.raw-data-box { background: var(--secondary-bg); padding: 10px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 12px; height: auto; }
 
-/* ACORDEONES Y ESTILOS COMUNES */
+/* ESTILOS COMUNES */
 .category-header-accordion { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 16px; background: var(--secondary-bg); font-weight: 700; font-size: 0.95rem; color: var(--primary-color); border-bottom: 1px solid var(--border-color); text-transform: uppercase; cursor: pointer; user-select: none; }
 .category-items.collapsed { display: none; }
 
@@ -244,7 +244,7 @@ button, .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-import-label { bor
 
 .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 1100; }
 .modal.hidden { display: none; }
-.modal-box { background: var(--card-bg); border-radius: 14px; width: min(650px, 100%); max-height: 90vh; overflow-y: auto; padding: 1.2rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); }
+.modal-box { background: var(--card-bg); border-radius: 14px; width: min(680px, 100%); max-height: 90vh; overflow-y: auto; padding: 1.2rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); }
 .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
 .modal-head h3 { margin: 0; font-size: 1.2rem; color: var(--primary-color); }
 .modal-box label { display: block; margin-top: 0.8rem; font-size: 0.9rem; font-weight: 600; }
