@@ -63,7 +63,6 @@ export function openRecetaForgeModal() {
     const modal = document.getElementById('receta-forge-modal');
     if (!modal) return;
     
-    // Resetear a selector de modo inicial en paralelo
     showForgeView('selector');
     modal.classList.remove('hidden');
 }
@@ -244,11 +243,10 @@ async function interpretRecipeWithAI(meal, rawIngredients) {
         return;
     }
 
-    // Feedback visual persistente y dinámico para la IA (gemini-3.8-flash)
     showToast('🤖 Analizando receta con IA (gemini-3.8-flash)...', 'info');
 
     try {
-        const systemPrompt = `Devuelve ÚNICAMENTE un objeto JSON válido con la traducción al español y normalización de cantidades en sistema métrico europeo:
+        const systemPrompt = `Eres un chef experto y parser de datos. Traduce y normaliza la siguiente receta al español (sistema métrico europeo). Devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta, sin texto adicional:
         {
           "nombre": "Nombre traducido al español",
           "categoria": "Categoría traducida",
@@ -259,28 +257,43 @@ async function interpretRecipeWithAI(meal, rawIngredients) {
           "pasos": ["Paso 1", "Paso 2"]
         }`;
 
+        const userPrompt = `Receta a procesar:\nNombre: ${meal.strMeal}\nIngredientes:\n${rawIngredients.join('\n')}\nInstrucciones:\n${meal.strInstructions}`;
+
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: `${systemPrompt}\n\nTraducir esta receta:\nNombre: ${meal.strMeal}\nIngredientes:\n${rawIngredients.join('\n')}\nInstrucciones:\n${meal.strInstructions}` }] }]
+                contents: [
+                    { role: "user", parts: [{ text: systemPrompt }, { text: userPrompt }] }
+                ],
+                generationConfig: {
+                    response_mime_type: "application/json"
+                }
             })
         });
 
         const data = await res.json();
-        if (!data.candidates || !data.candidates[0].content) {
+        
+        if (data.error) {
+            throw new Error(data.error.message || 'Error en la API de Google AI');
+        }
+
+        if (!data.candidates || !data.candidates[0].content || !data.candidates[0].content.parts) {
             throw new Error('Respuesta inválida de Gemini');
         }
 
-        const rawText = data.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
+        let rawText = data.candidates[0].content.parts[0].text.trim();
+        rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+
         const parsed = JSON.parse(rawText);
 
-        fillEditorForm(parsed.nombre, parsed.categoria, parsed.raciones || 4, parsed.ingredientes || [], (parsed.pasos || []).join('\n'));
+        fillEditorForm(parsed.nombre || meal.strMeal, parsed.categoria || 'General', parsed.raciones || 4, parsed.ingredientes || [], (parsed.pasos || []).join('\n'));
         showForgeView('editor');
         showToast('¡Receta interpretada con éxito! Valida abajo', 'success');
+        
     } catch (err) {
         console.error('Error al interpretar con IA:', err);
-        showToast('Error al procesar con IA. Comprueba tu API Key.', 'warning');
+        showToast(`Error al procesar con IA: ${err.message}`, 'warning');
     }
 }
 
